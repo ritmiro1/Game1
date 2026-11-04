@@ -2,7 +2,7 @@
   "name": "synapsis-chronoresonance",
   "version": "1.2.0",
   "description": "СИНАПСИС: Хронорезонанс — тактический резонансный дуэлянт с одновременными ходами, умнейшими ботами и онлайн-ареной",
-  "main": "server/server.js",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "start": "node server/server.js",
@@ -10,15 +10,25 @@
     "build:exe": "node scripts/build-exe.js",
     "serve": "npx serve ."
   },
-  "keywords": ["tactical", "duel", "resonance", "sci-fi", "board-game", "online", "ai"],
+  "keywords": [
+    "tactical",
+    "duel",
+    "resonance",
+    "sci-fi",
+    "board-game",
+    "online",
+    "ai"
+  ],
   "author": "ritmiro1",
   "license": "MIT",
   "dependencies": {
-    "ws": "^8.17.0",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "ws": "^8.17.0"
   },
   "devDependencies": {
+    "electron": "^45.2.2",
+    "electron-packager": "^17.1.2",
     "pkg": "^5.8.1"
   }
 }

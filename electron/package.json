@@ -1,0 +1,8 @@
+{
+  "name": "synapsis-chronoresonance",
+  "version": "1.2.0",
+  "description": "СИНАПСИС: Хронорезонанс — Дуэль Архитекторов",
+  "main": "main.js",
+  "author": "Synapsis Studio",
+  "private": true
+}
