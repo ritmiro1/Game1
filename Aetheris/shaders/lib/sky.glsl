@@ -1,15 +1,26 @@
 #ifndef AETHERIS_SKY
 #define AETHERIS_SKY
-vec3 atmosphere(vec3 ray){
+#include "/lib/scattering.glsl"
+vec3 skyRadiance(vec3 ray,bool fullQuality){
  vec3 sun=normalize(mat3(gbufferModelViewInverse)*sunPosition);float day=dayAmount(),h=saturate(ray.y);
  float horizon=pow(1.0-abs(ray.y),5.0);float dusk=1.0-smoothstep(0.02,0.35,abs(sun.y));
  vec3 c=mix(vec3(0.004,0.008,0.024),mix(vec3(0.25,0.48,0.78),vec3(0.035,0.17,0.44),sqrt(h)),day);
+#if ATMOSPHERE_QUALITY > 0
+ vec3 night=vec3(0.004,0.008,0.024)*(1.0-day);
+ vec3 scattered=scatteringFit(ray,sun);
+#if ATMOSPHERE_QUALITY == 2
+ if(fullQuality)scattered=singleScattering(ray,sun);
+#endif
+ c=night+scattered;
+#else
  c+=vec3(0.8,0.17,0.055)*horizon*dusk*(0.4+0.6*max(dot(ray,sun),0.0));
+#endif
  c+=sunlight()*pow(max(dot(ray,sun),0.0),600.0)*0.4*day;
  c+=vec3(10.0,8.0,5.0)*smoothstep(0.99982,0.99991,dot(ray,sun))*day;
  vec3 moon=normalize(mat3(gbufferModelViewInverse)*moonPosition);
  // Phase mask on the procedural moon disc, oriented in its local tangent plane.
- vec3 right=normalize(cross(moon,vec3(0,1,0)));vec3 up=cross(right,moon);
+ vec3 reference=abs(moon.y)>0.98?vec3(0,0,1):vec3(0,1,0);
+ vec3 right=safeNormalize(cross(moon,reference));vec3 up=cross(right,moon);
  vec2 mc=vec2(dot(ray,right),dot(ray,up))/0.009;
  if(dot(ray,moon)>0.9999 && dot(mc,mc)<1.0){
  float z=sqrt(max(0.0,1.0-dot(mc,mc)));float phase=float(moonPhase)*PI/4.0;
@@ -21,4 +32,6 @@ vec3 atmosphere(vec3 ray){
  c+=(vec3(stars)*1.8+vec3(0.012,0.014,0.025)*band*fbm(starUV*0.02))*(1.0-day)*smoothstep(0.0,0.2,ray.y);
  return mix(c,vec3(dot(c,vec3(0.25,0.6,0.15)))*0.6,rainStrength*0.8);
 }
+vec3 atmosphere(vec3 ray){return skyRadiance(ray,false);}
+vec3 renderSky(vec3 ray){return skyRadiance(ray,true);}
 #endif

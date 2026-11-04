@@ -2,7 +2,9 @@
 #define AETHERIS_POST
 vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}
 vec3 bright(vec3 c){float l=max(c.r,max(c.g,c.b));return c*max(l-BLOOM_THRESHOLD,0.0)/max(l,0.0001);}
-float aoAt(vec2 uv,vec3 p,vec3 n){float occ=0.0;
+float aoAt(vec2 uv,vec3 p,vec3 n){
+ if(AO_STRENGTH<=0.0 || -p.z>=AO_DISTANCE)return 1.0;
+ float occ=0.0;
  for(int i=0;i<AO_SAMPLES;i++){
  float a=float(i)*2.399963+hash12(floor(uv*vec2(viewWidth,viewHeight)))*6.28;
  float r=sqrt((float(i)+0.5)/float(AO_SAMPLES))*AO_RADIUS;
@@ -10,9 +12,16 @@ float aoAt(vec2 uv,vec3 p,vec3 n){float occ=0.0;
  vec2 t=clamp(uv+offset,vec2(0.001),vec2(0.999));float d=texture2D(depthtex0,t).r;
  vec3 delta=viewPosition(t,d)-p;float len=length(delta);
  occ+=max(dot(n,delta/max(len,0.0001))-0.12,0.0)*(1.0-smoothstep(AO_RADIUS,AO_RADIUS*2.0,len))*step(d,0.99999);
- }return 1.0-occ/float(AO_SAMPLES)*AO_STRENGTH;
+ }return 1.0-occ/float(AO_SAMPLES)*AO_STRENGTH*(1.0-smoothstep(AO_DISTANCE*0.75,AO_DISTANCE,-p.z));
 }
-vec3 bloomBlur(sampler2D tex,vec2 uv,vec2 direction){vec3 c=vec3(0);float w=0.0;for(int i=-4;i<=4;i++){float k=exp(-float(i*i)/8.0);c+=texture2D(tex,clamp(uv+direction*float(i),vec2(0.001),vec2(0.999))).rgb*k;w+=k;}return c/w;}
+// Pair adjacent Gaussian taps using hardware linear filtering: 5 reads instead of 9.
+vec3 bloomBlur(sampler2D tex,vec2 uv,vec2 direction){
+ vec2 edge=0.5/effectDimensions();
+ vec3 c=texture2D(tex,clamp(uv,edge,1.0-edge)).rgb*0.2041637;
+ c+=(texture2D(tex,clamp(uv+direction*1.40733,edge,1.0-edge)).rgb+texture2D(tex,clamp(uv-direction*1.40733,edge,1.0-edge)).rgb)*0.3040054;
+ c+=(texture2D(tex,clamp(uv+direction*3.29421,edge,1.0-edge)).rgb+texture2D(tex,clamp(uv-direction*3.29421,edge,1.0-edge)).rgb)*0.0939128;
+ return c;
+}
 // Spatial fallback when temporal AA is disabled. Compare bounded luminance so
 // a single HDR emissive doesn't force excessive blur over neighboring pixels.
 float aaLuma(vec3 c){float l=dot(max(c,vec3(0.0)),vec3(0.299,0.587,0.114));return l/(1.0+l);}

@@ -4,8 +4,11 @@
 vec3 reflectedScene(vec3 p,vec3 n,float rough,vec3 skyFallback){
  vec3 ray=safeNormalize(reflect(safeNormalize(p),n));
 #if REFLECTION_STEPS > 0
+ if(length(p)>SSR_DISTANCE)return skyFallback;
+ int budget=int(mix(float(REFLECTION_STEPS),max(4.0,float(REFLECTION_STEPS)*0.5),smoothstep(SSR_DISTANCE*0.3,SSR_DISTANCE,length(p))));
  vec3 origin=p+n*0.08,q=origin,previous=origin;
  for(int i=0;i<REFLECTION_STEPS;i++){
+  if(i>=budget)break;
   previous=q;q+=ray*(0.18+float(i)*0.12);
   if(q.z>=-near)break;
   vec2 t=projectView(q);

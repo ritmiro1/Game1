@@ -1,20 +1,187 @@
 {
   "type": "static GLSL compile/link and contract audit (not Minecraft runtime)",
   "compiler": "Glslang Version: 10:11.7.0",
-  "source_sha256": "082ccf97a3428b47e8a64e4cd3131af436b0a198a2bd832f985ba5ac501296bb",
+  "source_sha256": "561b1cc111a1e112a2df81382005e0db2ec357d9c3673200c053bf948bb321be",
   "compiler_macros_injected": false,
-  "program_pairs": 21,
+  "program_pairs": 23,
   "variants": {
-    "LOW": 21,
-    "MEDIUM": 21,
-    "HIGH": 21,
-    "ULTRA": 21,
-    "DEFAULT": 21,
-    "HIGH_CAMERA": 21,
-    "NEUTRAL_DISABLED": 21,
-    "TEMPORAL_HIGH": 21,
-    "TEMPORAL_CAMERA": 21,
-    "EXTREMES": 21
+    "LOW": 23,
+    "MEDIUM": 23,
+    "HIGH": 23,
+    "ULTRA": 23,
+    "DEFAULT": 23,
+    "HIGH_CAMERA": 23,
+    "NEUTRAL_DISABLED": 23,
+    "TEMPORAL_HIGH": 23,
+    "TEMPORAL_CAMERA": 23,
+    "EXTREMES": 23,
+    "LABPBR": 23,
+    "LABPBR_POM": 23,
+    "ALL_FEATURES": 23,
+    "FAST_DISABLED": 23,
+    "VOLUME_QUARTER": 23
+  },
+  "pipeline_contracts": {
+    "LOW": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.25 0.25",
+      "buffer5_scale": "0.25 0.25",
+      "vanilla_clouds": "fancy"
+    },
+    "MEDIUM": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "HIGH": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "ULTRA": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite1",
+        "composite2",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "off"
+    },
+    "DEFAULT": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "HIGH_CAMERA": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "NEUTRAL_DISABLED": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.25 0.25",
+      "buffer5_scale": "0.25 0.25",
+      "vanilla_clouds": "off"
+    },
+    "TEMPORAL_HIGH": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite3",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "TEMPORAL_CAMERA": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite3",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "EXTREMES": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite1",
+        "composite2",
+        "composite3",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "off"
+    },
+    "LABPBR": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "LABPBR_POM": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy"
+    },
+    "ALL_FEATURES": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite1",
+        "composite2",
+        "composite3",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "1.0 1.0",
+      "buffer5_scale": "1.0 1.0",
+      "vanilla_clouds": "off"
+    },
+    "FAST_DISABLED": {
+      "enabled_composite_programs": [
+        "composite"
+      ],
+      "buffer4_scale": "0.25 0.25",
+      "buffer5_scale": "0.25 0.25",
+      "vanilla_clouds": "off"
+    },
+    "VOLUME_QUARTER": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite1",
+        "composite2",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.25 0.25",
+      "buffer5_scale": "0.25 0.25",
+      "vanilla_clouds": "off"
+    }
   },
   "errors": [],
   "passed": true

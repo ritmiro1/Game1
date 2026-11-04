@@ -33,6 +33,33 @@ Measure after warmup: frame-time median and p95 at fixed location and camera pat
 Keep screenshots with the same FOV, time/weather and exposure. Test NVIDIA, AMD
 and Intel separately; one GPU passing does not certify the other drivers.
 
-Remaining order after runtime acceptance: LabPBR/POM, more robust reflections,
-atmosphere/clouds, indirect light; performance profiling throughout. Do not stack
-these on an unverified baseline and call all ten directions complete.
+The 1.2.0 iteration adds opt-in material and atmosphere modes without claiming
+runtime acceptance. Validate those modes separately; indirect light, advanced
+reflections and driver benchmarking remain future work.
+
+## 1.2.0 acceptance additions — ALL NOT RUN
+
+| Test | Iris | OptiFine | Pass criterion |
+|---|---|---|---|
+| TAA off / bloom off loader programs | Not run | Not run | Confirm skipped passes, no stale history or bloom |
+| Quarter / half / full effect targets | Not run | Not run | Correct viewport/UVs, odd resolutions, no black edges |
+| LabPBR off vs neutral/missing maps | Not run | Not run | Material-ID fallback remains visible and stable |
+| Known LabPBR dielectric and 230–237 metal swatches | Not run | Not run | Correct normal orientation, roughness and RGB reflectance |
+| Emissive alpha 0 / 254 / 255 | Not run | Not run | 254 emits; 255 does not map to emission |
+| Normal AO / porosity / SSS | Not run | Not run | AO does not erase direct light; wet/leaf response bounded |
+| POM terrain atlas edges / cutouts / grazing / distance | Not run | Not run | No neighbor-tile sampling, unstable mips or extreme displacement |
+| Gradient extension and fallback | Not run | Not run | Both load on the actual driver; inspect mip stability |
+| All atmosphere modes / horizon / sun below horizon | Not run | Not run | No NaN banding or abrupt time-of-day transitions |
+| Height fog on mountains / cave / underwater | Not run | Not run | Stable density; no double underwater attenuation |
+| Vanilla vs volume clouds / horizon / silhouette | Not run | Not run | No double clouds, terrain bleed or opaque black sky |
+| Cloud cover/rain/wind and ground shadows | Not run | Not run | Consistent movement; document approximate shadow mismatch |
+| Volume clouds + TAA/bloom/DOF | Not run | Not run | No stale reused buffer, cloud trails or sun bloom through opaque cloud |
+
+### Real performance capture protocol
+Do not infer FPS from shader-tap counts. Use the same game/loader/driver, resolution,
+render distance, resource pack, world, camera path, time and weather for both builds.
+Warm up 30 seconds, then collect at least 600 frame-time samples per scene/profile;
+record median and p95 frame time (milliseconds), not just an FPS screenshot. Repeat
+three runs. Compare base, bloom off, quarter/half/full, LabPBR, POM and volume clouds
+one at a time. Record VRAM through a GPU profiler, not logical buffer-size estimates.
+No such captures have been made here.

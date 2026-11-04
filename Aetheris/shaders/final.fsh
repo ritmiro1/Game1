@@ -21,7 +21,9 @@ void main(){vec3 c=fxaaColor(uv);float d=texture2D(depthtex0,uv).r;
   }
  }
 #endif
+ #if BLOOM_ENABLED == 1
  c+=texture2D(colortex5,uv).rgb*BLOOM_STRENGTH;
+#endif
  c=aces(c*adaptedExposure());
 #if COLOR_GRADE == 1
  c*=mix(vec3(0.96,0.99,1.04),vec3(1.035,1.01,0.975),c);

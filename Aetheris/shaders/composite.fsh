@@ -15,7 +15,8 @@ void main(){
  if(d<0.99999 && (water || nr.a<0.45)){
   vec3 ray=reflect(safeNormalize(p),n);
   // Sky reflections are reduced indoors, rather than glowing in closed caves.
-  vec3 fallback=atmosphere(safeNormalize(mat3(gbufferModelViewInverse)*ray))*pow(saturate(material.b),2.0);
+  vec3 rayW=safeNormalize(mat3(gbufferModelViewInverse)*ray);
+  vec3 fallback=cloudSkyFallback(atmosphere(rayW),rayW)*pow(saturate(material.b),2.0);
   if(isEyeInWater==1)fallback=vec3(0.012,0.065,0.085)*mix(0.12,1.0,dayAmount());
   vec3 reflected=reflectedScene(p,n,nr.a,fallback);
   if(water){
@@ -35,7 +36,11 @@ void main(){
    under+=vec3(0.012,0.075,0.095)*(1.0-transmission)*mix(0.12,1.0,dayAmount())*material.b;
    c=mix(under,reflected,f)+c*0.12;
   }else{
-   vec3 F=fresnel(dot(n,safeNormalize(-p)),mix(vec3(0.04),vec3(0.65),material.r));
+   vec3 surfaceF0=mix(vec3(0.04),vec3(0.65),material.r);
+#if LAB_PBR == 1
+   surfaceF0=texture2D(colortex7,uv).rgb;
+#endif
+   vec3 F=fresnel(dot(n,safeNormalize(-p)),surfaceF0);
    c=mix(c,reflected,F*(1.0-nr.a)*saturate(material.b));
   }
  }

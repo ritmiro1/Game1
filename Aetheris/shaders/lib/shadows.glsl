@@ -1,14 +1,9 @@
 #ifndef AETHERIS_SHADOWS
 #define AETHERIS_SHADOWS
+#include "/lib/clouds.glsl"
 // Identical warp in the writer and receiver; the depth axis stays linear.
 vec3 distortShadow(vec3 p){p.xy/=0.15+length(p.xy)*0.85;p.z*=0.2;return p;}
-float cloudShadow(vec3 p){
-#if CLOUD_QUALITY > 0
- return mix(1.0,0.70,smoothstep(0.48,0.72,fbm((p.xz+cameraPosition.xz)*0.0015+frameTimeCounter*0.002)));
-#else
- return 1.0;
-#endif
-}
+float cloudShadow(vec3 p){return cloudGroundVisibility(p+cameraPosition);}
 bool insideShadow(vec3 t){return all(greaterThan(t,vec3(0.002)))&&all(lessThan(t,vec3(0.998)));}
 vec3 shadowCoordinate(vec3 p){vec4 q=shadowProjection*shadowModelView*vec4(p,1.0);return distortShadow(q.xyz/q.w)*0.5+0.5;}
 vec2 shadowDisk(int i,int count){float a=float(i)*2.399963;return vec2(cos(a),sin(a))*sqrt((float(i)+0.5)/float(count));}

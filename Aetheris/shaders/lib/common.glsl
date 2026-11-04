@@ -16,7 +16,11 @@ uniform vec4 entityColor;
 uniform vec3 skyColor, fogColor;
 uniform ivec2 eyeBrightnessSmooth;
 uniform sampler2D texture, lightmap;
-uniform sampler2D colortex0, colortex1, colortex2, colortex3, colortex4, colortex5, colortex6;
+#if LAB_PBR == 1
+uniform sampler2D normals, specular;
+uniform ivec2 atlasSize;
+#endif
+uniform sampler2D colortex0, colortex1, colortex2, colortex3, colortex4, colortex5, colortex6, colortex7;
 uniform sampler2D depthtex0, depthtex1, shadowtex0;
 const float PI=3.14159265;
 float saturate(float x){return clamp(x,0.0,1.0);}
@@ -36,6 +40,15 @@ vec2 temporalJitter(int frame){
 }
 vec4 jitterClip(vec4 clip){clip.xy+=temporalJitter(frameCounter)*2.0*clip.w;return clip;}
 vec2 safeUV(vec2 uv){vec2 edge=0.5/vec2(viewWidth,viewHeight);return clamp(uv,edge,1.0-edge);}
+vec2 effectDimensions(){
+#if EFFECT_RESOLUTION == 0
+ return max(floor(vec2(viewWidth,viewHeight)*0.25),vec2(1.0));
+#elif EFFECT_RESOLUTION == 1
+ return max(floor(vec2(viewWidth,viewHeight)*0.5),vec2(1.0));
+#else
+ return vec2(viewWidth,viewHeight);
+#endif
+}
 vec3 safeNormalize(vec3 v){return v*inversesqrt(max(dot(v,v),1e-12));}
 vec3 viewPosition(vec2 uv,float d){vec4 p=gbufferProjectionInverse*vec4((uv-temporalJitter(frameCounter))*2.0-1.0,d*2.0-1.0,1.0);return p.xyz/p.w;}
 vec3 worldRelative(vec3 p){return (gbufferModelViewInverse*vec4(p,1.0)).xyz;}

@@ -46,6 +46,46 @@ def apply_options(text, options):
     return text
 
 
+def default_options(root=SHADERS):
+    text = (root / 'lib/settings.glsl').read_text()
+    return dict(re.findall(r'^#define\s+(\w+)\s+([^\s/]+)\s*//\s*\[', text, re.M))
+
+
+def resolve_properties(options, root=SHADERS):
+    """Audit just the integer #if/elif subset used by THIS pack, not a loader emulator."""
+    values = {**default_options(root), **options}
+    result, stack, active = {}, [], True
+    for line in (root / 'shaders.properties').read_text().splitlines():
+        line = line.strip()
+        condition = re.fullmatch(r'#(if|elif)\s+(\w+)\s*(==|!=)\s*(\d+)', line)
+        if condition:
+            kind, name, operator, number = condition.groups()
+            if name not in values:
+                raise ValueError(f'Unknown conditional property option: {name}')
+            matches = (int(values[name]) == int(number)) == (operator == '==')
+            if kind == 'if':
+                stack.append([active, matches])
+                active = active and matches
+            else:
+                parent, used = stack[-1]
+                active = parent and not used and matches
+                stack[-1][1] = used or matches
+        elif line == '#else':
+            parent, used = stack[-1]
+            active = parent and not used
+            stack[-1][1] = True
+        elif line == '#endif':
+            active = stack.pop()[0]
+        elif line.startswith(('#if', '#elif', '#ifdef', '#ifndef')):
+            raise ValueError('Unsupported conditional in property audit: ' + line)
+        elif active and line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            result[key.strip()] = value.strip()
+    if stack:
+        raise ValueError('Unbalanced property directives')
+    return result
+
+
 def variants(root=SHADERS):
     settings = (root / 'shaders.properties').read_text()
     profiles = {key: dict(re.findall(r'(\w+)=([\w.]+)', value))
@@ -60,6 +100,14 @@ def variants(root=SHADERS):
                             'shadowMapResolution': '8192', 'shadowDistance': '192.0',
                             'WATER_ABSORPTION': '2.0', 'WATER_REFRACTION': '0.0',
                             'SHADOW_SOFTNESS': '2.0', 'NIGHT_BRIGHTNESS': '1.5'}
+    profiles['LABPBR'] = {**profiles['HIGH'], 'LAB_PBR': '1'}
+    profiles['LABPBR_POM'] = {**profiles['HIGH'], 'LAB_PBR': '1', 'POM': '1'}
+    profiles['ALL_FEATURES'] = {**profiles['TEMPORAL_CAMERA'], 'LAB_PBR': '1', 'POM': '1',
+                                'POM_STEPS': '20', 'POM_DEPTH': '0.06', 'CLOUD_MODE': '2',
+                                'ATMOSPHERE_QUALITY': '2', 'EFFECT_RESOLUTION': '2'}
+    profiles['FAST_DISABLED'] = {**profiles['LOW'], 'BLOOM_ENABLED': '0', 'CLOUD_MODE': '0',
+                                 'AO_STRENGTH': '0.0', 'FOG_DENSITY': '0.0'}
+    profiles['VOLUME_QUARTER'] = {**profiles['ULTRA'], 'EFFECT_RESOLUTION': '0', 'CLOUD_STEPS': '8'}
     return profiles
 
 
@@ -113,9 +161,17 @@ def main():
     report = {'type': 'static GLSL compile/link and contract audit (not Minecraft runtime)',
               'compiler': subprocess.check_output([args.compiler, '--version'], text=True).splitlines()[0],
               'source_sha256': source_digest(root), 'compiler_macros_injected': False,
-              'program_pairs': len(pairs), 'variants': {}, 'errors': []}
+              'program_pairs': len(pairs), 'variants': {}, 'pipeline_contracts': {}, 'errors': []}
     with tempfile.TemporaryDirectory() as directory:
         for profile, options in variants(root).items():
+            properties = resolve_properties(options, root)
+            enabled = [p.stem for p in pairs if p.stem.startswith('composite')
+                       and properties.get('program.' + p.stem + '.enabled', 'true') != 'false']
+            report['pipeline_contracts'][profile] = {
+                'enabled_composite_programs': enabled,
+                'buffer4_scale': properties['size.buffer.colortex4'],
+                'buffer5_scale': properties['size.buffer.colortex5'],
+                'vanilla_clouds': properties['clouds']}
             for vertex in pairs:
                 inputs = []
                 for source, extension in [(vertex, 'vert'), (vertex.with_suffix('.fsh'), 'frag')]:
