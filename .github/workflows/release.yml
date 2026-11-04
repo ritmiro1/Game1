@@ -1,0 +1,44 @@
+name: Build and Release EXE
+on:
+  push:
+    branches: [arena/51bc3a69-game1]
+    paths:
+      - 'dist/**'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify EXE exists
+        shell: bash
+        run: ls -lh dist/Synapsis-Chronoresonance-Duel-Setup.exe || echo "no exe"
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.2.0
+          name: "СИНАПСИС: Хронорезонанс v1.2.0 — Дуэль Архитекторов"
+          body: |
+            ## СИНАПСИС: Хронорезонанс v1.2.0
+            **Где мысль становится гравитацией.**
+
+            ### ⬇ Прямая ссылка на скачивание EXE с GitHub
+            **Windows 10/11 64-bit:**
+            https://github.com/ritmiro1/Game1/releases/download/v1.2.0/Synapsis-Chronoresonance-Duel-Setup.exe
+
+            Размер: 4 MB (в распаковке 87 MB с ассетами)
+            SHA256: см. в логах сборки
+            Запуск: двойной клик → http://localhost:3000
+
+            ### Что внутри
+            - 5 ботов-архетипов: НОВОБРАНЕЦ 900 → АБСОЛЮТ 2280 ELO (глубина 5, 12k узлов)
+            - 6 арен, 12 скинов, 18 титулов, 48 головоломок
+            - Онлайн-арена: лобби, код комнаты, матчмейкинг ELO, топы, чат, реплеи
+            - Анимации, частицы, WebAudio
+          files: dist/Synapsis-Chronoresonance-Duel-Setup.exe
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
