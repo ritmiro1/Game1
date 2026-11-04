@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>СИНАПСИС: ХРОНОРЕЗОНАНС — Дуэль Архитекторов</title>
+<meta name="description" content="Тактический резонансный дуэлянт нового поколения. Одновременные ходы, умнейшие боты, онлайн-арена. Где мысль становится гравитацией.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230a0e1a'/><circle cx='32' cy='32' r='18' fill='none' stroke='%2300e5ff' stroke-width='3'/><circle cx='32' cy='32' r='8' fill='%2300e5ff'/><path d='M32 12 L32 20 M32 44 L32 52 M12 32 L20 32 M44 32 L52 32' stroke='%2300e5ff' stroke-width='2'/></svg>">
+</head>
+<body>
+<div id="bg">
+  <div class="bg-grid"></div>
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+  <div class="bg-particles" id="bgParticles"></div>
+</div>
+
+<!-- Header -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <div class="logo-icon"><span class="logo-ring"></span><span class="logo-core"></span></div>
+      <div class="logo-text">
+        <b>СИНАПСИС</b><i>ХРОНОРЕЗОНАНС</i>
+        <small>ДУЭЛЬ АРХИТЕКТОРОВ • v1.2.0</small>
+      </div>
+    </div>
+    <nav class="nav">
+      <button data-screen="menu" class="nav-btn active">Главная</button>
+      <button data-screen="lobby" class="nav-btn">Арена Онлайн</button>
+      <button data-screen="rating" class="nav-btn">Рейтинг</button>
+      <button data-screen="codex" class="nav-btn">Кодекс</button>
+      <button data-screen="profile" class="nav-btn">Профиль</button>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="player-badge" id="playerBadge">
+      <img id="playerAvatar" src="" alt="">
+      <div>
+        <b id="playerName">Резонатор_01</b>
+        <span><span id="playerElo">1284</span> ELO • <span id="playerRank">Платина III</span></span>
+      </div>
+      <div class="badge-online"></div>
+    </div>
+    <button id="settingsBtn" class="icon-btn" title="Настройки">⚙</button>
+  </div>
+</header>
+
+<!-- Main area -->
+<main id="app">
+  <!-- MENU -->
+  <section id="screen-menu" class="screen active">
+    <div class="hero">
+      <div class="hero-left">
+        <div class="eyebrow">НОВЫЙ ЖАНР • ТАКТИЧЕСКИЙ РЕЗОНАНСНЫЙ ДУЭЛЯНТ</div>
+        <h1 class="hero-title"><span>Где мысль</span><span class="accent">становится</span><span>гравитацией</span></h1>
+        <p class="hero-desc">2174 год. Архитекторы исчезли, оставив Резонансные Двигатели — ткани реальности, что откликаются на чистую волю. Стань <b>Резонатором</b>, покори синхронный дуэльный ритуал: оба игрока ходят <b>одновременно</b>, не видя замысла соперника. Предскажи, перехитри, обрати его силу в свою.</p>
+        <div class="hero-stats">
+          <div><b id="statPlayersOnline">1 847</b><span>в сети</span></div>
+          <div><b>4</b><span>архетипа ботов</span></div>
+          <div><b>6</b><span>арен</span></div>
+          <div><b>18</b><span>титулов</span></div>
+        </div>
+        <div class="hero-actions">
+          <button id="btnQuickPlay" class="btn btn-primary pulse"><span class="btn-icon">◉</span> БЫСТРЫЙ ДУЭЛЬ — С БОТОМ</button>
+          <button id="btnOnline" class="btn btn-ghost">⚡ ИСКАТЬ СОПЕРНИКА ОНЛАЙН</button>
+          <button id="btnTutorial" class="btn btn-ghost small">▶ ОБУЧЕНИЕ (3 мин)</button>
+        </div>
+        <div class="hero-note">⚡ <b>Не шахматы. Не MOBA. Не ККИ.</b> Синхронные ходы + векторное поле + блеф = новый киберспорт. Зависит только от твоего чтения соперника.</div>
+      </div>
+      <div class="hero-right">
+        <div class="showcase">
+          <div class="showcase-board" id="miniBoardPreview"></div>
+          <div class="showcase-legend">
+            <div><span class="dot dot-you"></span> ТВОИ РЕЗОНАТОРЫ (3)</div>
+            <div><span class="dot dot-enemy"></span> ВРАГ</div>
+            <div><span class="dot dot-core"></span> ЯДРО РЕЗОНАНСА</div>
+            <div><span class="dot dot-portal"></span> ПОРТАЛ ПОБЕДЫ</div>
+          </div>
+          <div class="showcase-how">
+            <h3>Как победить?</h3>
+            <ol>
+              <li><b>Заведи Ядро в портал врага</b> — используй <i>Тяготение / Толчок / Обмен</i> (стоят Энергию).</li>
+              <li>Или <b>захвати всех врагов</b> — встань на их клетку.</li>
+              <li>Ходы <b>одновременны</b> — читай намерения, ставь ловушки, блефуй пасом!</li>
+            </ol>
+          </div>
+        </div>
+        <div class="daily">
+          <div class="daily-head"><b>ЕЖЕДНЕВНЫЙ ВЫЗОВ</b><span id="dailyTimer">22:14:07</span></div>
+          <p>Победи ОРАКУЛА на арене «Бездна» с 1 Энергией в запасе.</p>
+          <div class="progress"><div style="width:62%"></div></div>
+          <small>62% игроков уже приняли • Награда: скин «Квантовый Призрак»</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feat"><i>🧠</i><b>100% скилл</b><span>Нет рандома. Нет доната. Только чтение и расчёт. ELO как в шахматах.</span></div>
+      <div class="feat"><i>🤖</i><b>Боты-гении</b><span>4 архетипа с разными характерами. АБСОЛЮТ видит на 5 ходов, знает дебюты и ловушки.</span></div>
+      <div class="feat"><i>✨</i><b>Анимация и частицы</b><span>Резонансные волны, шейк, трейлы, неон. Каждый ход — спектакль.</span></div>
+      <div class="feat"><i>🏆</i><b>Онлайн-арена</b><span>Лобби, комнаты по коду, матчмейкинг, чат, реплеи, турниры, топы сезона.</span></div>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode-card" data-mode="bot">
+        <div class="mode-icon">◈</div><h3>Дуэль с Ботом</h3><p>Тренируй чтение. От «Новобранца» до «АБСОЛЮТА», который почти не проигрывает.</p><button class="btn btn-small btn-primary">ИГРАТЬ</button>
+      </div>
+      <div class="mode-card" data-mode="online">
+        <div class="mode-icon">⬡</div><h3>Рейтинговая Арена</h3><p>Найди равного. Система ELO, дивизионы, сезоны, анти-чит.</p><button class="btn btn-small btn-ghost">В АРЕНУ</button>
+      </div>
+      <div class="mode-card" data-mode="friend">
+        <div class="mode-icon">◎</div><h3>С другом / Турнир</h3><p>Создай комнату, поделись кодом. До 16 игроков в сетке Double Elimination.</p><button class="btn btn-small btn-ghost">СОЗДАТЬ</button>
+      </div>
+      <div class="mode-card" data-mode="puzzle">
+        <div class="mode-icon">⬔</div><h3>Головоломки</h3><p>48 задач от Архитекторов. «Мат в 2 резонанса» — найди форсированную победу.</p><button class="btn btn-small btn-ghost">РЕШАТЬ</button>
+      </div>
+    </div>
+
+    <div class="download-banner">
+      <div>
+        <h3>⬇ Скачать для Windows (EXE)</h3>
+        <p>Полная оффлайн-версия + лаунчер арены. Один файл, без установки. Версия <b>1.2.0</b> • 87 MB • Windows 10/11 64-bit</p>
+      </div>
+      <a id="downloadExe" class="btn btn-primary" href="https://github.com/ritmiro1/Game1/releases/download/v1.2.0/Synapsis-Chronoresonance-Duel-Setup.exe" target="_blank" rel="noopener">СКАЧАТЬ EXE С GITHUB</a>
+    </div>
+    <div class="download-mirror">
+      <small>Прямая ссылка: <code>https://github.com/ritmiro1/Game1/releases/download/v1.2.0/Synapsis-Chronoresonance-Duel-Setup.exe</code> • Если не качает — открой <a href="https://github.com/ritmiro1/Game1/releases" target="_blank">страницу релизов</a>. Хеш SHA256 публикуется в описании релиза.</small>
+    </div>
+  </section>
+
+  <!-- LOBBY -->
+  <section id="screen-lobby" class="screen">
+    <div class="section-head">
+      <h2>АРЕНА ОНЛАЙН — ЛОББИ</h2>
+      <div class="section-actions">
+        <button id="btnCreateRoom" class="btn btn-primary">＋ СОЗДАТЬ КОМНАТУ</button>
+        <button id="btnQuickMatch" class="btn btn-ghost">⚡ БЫСТРЫЙ ПОИСК (ELO)</button>
+      </div>
+    </div>
+    <div class="lobby-layout">
+      <div class="lobby-main">
+        <div class="tabs"><button class="tab active" data-tab="open">Открытые дуэли</button><button class="tab" data-tab="ongoing">Идут сейчас</button><button class="tab" data-tab="tournament">Турниры</button></div>
+        <div id="roomList" class="room-list"></div>
+      </div>
+      <aside class="lobby-side">
+        <div class="panel">
+          <h3>Войти по коду</h3>
+          <div class="join-row"><input id="roomCodeInput" placeholder="Код: 8F3K9Q" maxlength="6"><button id="btnJoinByCode" class="btn btn-small btn-primary">ВОЙТИ</button></div>
+          <small>Поделись кодом с другом для приватной дуэли.</small>
+        </div>
+        <div class="panel">
+          <h3>Чат арены</h3>
+          <div id="lobbyChat" class="chat-log"></div>
+          <div class="chat-input"><input id="chatInput" placeholder="Сообщение..."><button id="chatSend">➤</button></div>
+        </div>
+        <div class="panel stats-mini">
+          <h3>Твоя статистика</h3>
+          <div class="kv"><span>Побед</span><b id="profileWins">—</b></div>
+          <div class="kv"><span>Поражений</span><b id="profileLosses">—</b></div>
+          <div class="kv"><span>Винрейт</span><b id="profileWR">—</b></div>
+          <div class="kv"><span>Серия</span><b id="profileStreak">—</b></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- RATING -->
+  <section id="screen-rating" class="screen">
+    <div class="section-head"><h2>РЕЙТИНГ И ТОПЫ СЕЗОНА</h2><div class="season">Сезон «Пробуждение Архитектора» • 17 дней до конца</div></div>
+    <div class="rating-layout">
+      <div class="rating-table-wrap">
+        <div class="rating-controls"><input id="ratingSearch" placeholder="Поиск игрока..."><select id="ratingFilter"><option value="all">Все дивизионы</option><option>Гранд-Архитектор</option><option>Архитектор</option><option>Платина</option><option>Золото</option></select></div>
+        <table class="rating-table"><thead><tr><th>#</th><th>Игрок</th><th>Дивизион</th><th>ELO</th><th>W-L</th><th>Тренд</th></tr></thead><tbody id="ratingBody"></tbody></table>
+      </div>
+      <aside>
+        <div class="panel highlight"><h3>Твоё место</h3><div id="yourRankCard" class="rank-card"></div></div>
+        <div class="panel"><h3>Дивизионы</h3><ul class="divisions"><li><span>Гранд-Архитектор</span><b>2100+</b></li><li><span>Архитектор</span><b>1850-2099</b></li><li><span>Платина</span><b>1600-1849</b></li><li><span>Золото</span><b>1350-1599</b></li><li><span>Серебро</span><b>1100-1349</b></li><li><span>Бронза</span><b>&lt;1100</b></li></ul></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- CODEX -->
+  <section id="screen-codex" class="screen">
+    <div class="section-head"><h2>КОДЕКС АРХИТЕКТОРОВ</h2><span>6 арен • 8 резонаторов • 12 скинов • 18 титулов • Лор</span></div>
+    <div class="codex-grid" id="codexGrid"></div>
+    <div class="lore">
+      <h3>Лор: Забытый Резонанс</h3>
+      <p>До людей была Тишина. Потом пришли Архитекторы — не боги, а инженеры реальности. Они натянули струны пространства-времени и заставили вакуум петь. Их двигатели до сих пор висят в пустоте, ждут достойного. Ты — резонатор. Твоя воля — частота. Твой соперник — отражение. Победив, ты не уничтожаешь — ты настраиваешь.</p>
+      <p>Правила дуэли — ритуал настройки: одновременный выбор скрывает намерение, энергия ограничивает жадность, Ядро — камертон. Портал — точка согласия. Кто настроит быстрее, тот получает ключ.</p>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section id="screen-profile" class="screen">
+    <div class="profile-head">
+      <div class="avatar-big" id="profileAvatarBig"></div>
+      <div><h2 id="profileNameBig">Резонатор_01</h2><p id="profileTitle">Титул: Искатель Резонанса • Начни путь к Гранд-Архитектору</p><div class="elo-big"><b id="profileEloBig">1284</b> ELO <small id="profileRankBig">Платина III</small></div></div>
+      <div class="profile-actions"><button class="btn btn-ghost small" id="btnEditName">Сменить имя</button><button class="btn btn-ghost small" id="btnResetStats">Сбросить прогресс</button></div>
+    </div>
+    <div class="profile-grid">
+      <div class="panel"><h3>История дуэлей</h3><div id="matchHistory" class="history-list"></div></div>
+      <div class="panel"><h3>Достижения</h3><div id="achievements" class="ach-grid"></div></div>
+      <div class="panel"><h3>Настройки</h3>
+        <label class="switch"><input type="checkbox" id="optSound" checked> Звук и вибрация</label>
+        <label class="switch"><input type="checkbox" id="optParticles" checked> Частицы и шейк</label>
+        <label class="switch"><input type="checkbox" id="optGhost" checked> Предпросмотр ходов</label>
+        <label>Громкость <input type="range" id="optVolume" min="0" max="100" value="70"></label>
+        <label>Тема арены
+          <select id="arenaSelect"></select>
+        </label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- GAME OVERLAY -->
+<div id="gameOverlay" class="overlay hidden">
+  <div class="game-layout">
+    <div class="game-top">
+      <div class="player-card enemy" id="enemyCard">
+        <div class="pc-avatar"></div><div class="pc-info"><b id="enemyName">ОРАКУЛ</b><span id="enemyElo">1920 ELO • Архитектор</span></div><div class="pc-energy"><span>Энергия</span><div class="energy-bar" id="enemyEnergy"></div></div>
+      </div>
+      <div class="game-center">
+        <div class="turn-badge">ХОД <b id="turnNum">1</b> <span id="phaseLabel">ПЛАНИРОВАНИЕ</span></div>
+        <div class="timer-row"><div class="timer you">ТЫ <b id="timerYou">∞</b></div><div class="vs">VS</div><div class="timer enemy">ВРАГ <b id="timerEnemy">∞</b></div></div>
+      </div>
+      <div class="player-card you" id="youCard">
+        <div class="pc-avatar"></div><div class="pc-info"><b id="youName">ТЫ</b><span id="youElo">1284 ELO</span></div><div class="pc-energy"><span>Энергия</span><div class="energy-bar" id="youEnergy"></div></div>
+      </div>
+    </div>
+
+    <div class="board-area">
+      <div class="board-wrap">
+        <canvas id="boardCanvas" width="560" height="560"></canvas>
+        <div id="boardHint" class="board-hint">Выбери резонатор (клик), затем: ход — клик на соседнюю клетку, способность — кнопку справа. Оба игрока ходят одновременно — хитри!</div>
+      </div>
+      <div class="action-panel">
+        <h3>Твоё действие</h3>
+        <div id="selectedInfo" class="selected-info">Резонатор не выбран</div>
+        <div class="ability-grid">
+          <button class="abtn" data-ability="move"><b>⬢ ХОД</b><small>Перемещение на 1 клетку • 0⚡</small></button>
+          <button class="abtn" data-ability="pull"><b>◉ ТЯГОТЕНИЕ</b><small>Тянет Ядро к себе на 1 кл • 2⚡</small></button>
+          <button class="abtn" data-ability="push"><b>◎ РЕЗОНАНС</b><small>Толкает Ядро от себя • 2⚡</small></button>
+          <button class="abtn" data-ability="swap"><b>⇄ ИМПУЛЬС</b><small>Меняешься с Ядром • 2⚡ • кд2</small></button>
+          <button class="abtn ghost" data-ability="pass"><b>○ ПАС</b><small>Сэкономить ⚡ и блефовать</small></button>
+        </div>
+        <div class="confirm-row">
+          <button id="btnConfirm" class="btn btn-primary" disabled>✓ ПОДТВЕРДИТЬ (скрыто)</button>
+          <button id="btnClear" class="btn btn-ghost small">Сброс</button>
+        </div>
+        <div class="history-mini">
+          <h4>Хроника</h4><div id="miniHistory"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-bottom">
+      <button id="btnSurrender" class="btn btn-ghost small">🏳 Сдаться</button>
+      <button id="btnDraw" class="btn btn-ghost small">🤝 Ничья</button>
+      <div class="spectators"><span id="specCount">● 12 зрителей</span> <span id="arenaName">Арена: Кристальный Разлом</span></div>
+      <button id="btnExitGame" class="btn btn-ghost small">✕ Выйти в меню</button>
+    </div>
+  </div>
+  <div id="revealOverlay" class="reveal hidden">
+    <div class="reveal-card you"><b>ТВОЙ ХОД</b><span id="revealYou">—</span></div>
+    <div class="vs-big">VS</div>
+    <div class="reveal-card enemy"><b>ХОД ВРАГА</b><span id="revealEnemy">—</span></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="modalRoot" class="modal-root hidden"></div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<footer class="foot">
+  <div>© 2026 Synapsis Studio • Сделано с резонансом • <a href="https://github.com/ritmiro1/Game1" target="_blank">GitHub</a> • <a href="https://github.com/ritmiro1/Game1/releases" target="_blank">Релизы</a></div>
+  <div class="foot-links"><a href="https://github.com/ritmiro1/Game1/releases/download/v1.2.0/Synapsis-Chronoresonance-Duel-Setup.exe">⬇ Прямая ссылка на EXE</a> <span>•</span> <span id="serverStatus">● Сервер арены: офлайн (локальный режим)</span></div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
