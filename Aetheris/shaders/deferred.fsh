@@ -14,6 +14,9 @@ const int colortex2Format = RGBA16F;
 const int colortex3Format = RGBA16F;
 const int colortex4Format = RGBA16F;
 const int colortex5Format = RGBA16F;
+const int colortex6Format = RGBA16F;
+// Ping-pong history: RGB is scene-linear HDR, alpha is positive view depth.
+const bool colortex6Clear = false;
 const bool colortex0Clear = true;
 const bool colortex1Clear = true;
 const bool colortex2Clear = true;

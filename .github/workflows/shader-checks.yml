@@ -1,0 +1,40 @@
+name: Shader static checks and packaging
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Obtain reference GLSL compiler
+        run: |
+          mkdir -p .cache/compiler
+          cd .cache/compiler
+          npm pack glslang-validator-prebuilt-predownloaded@0.0.2
+          tar -xzf glslang-validator-prebuilt-predownloaded-0.0.2.tgz
+          chmod +x package/bin/glslangValidator.linux
+      - name: Contract audit and all compiler variants
+        run: python tools/validate.py --compiler "$PWD/.cache/compiler/package/bin/glslangValidator.linux"
+      - name: Unit and negative compiler regression tests
+        env:
+          GLSLANG_VALIDATOR: ${{ github.workspace }}/.cache/compiler/package/bin/glslangValidator.linux
+        run: python -m unittest discover -s tests -v
+      - name: Package exact tested sources
+        run: |
+          cp artifacts/validation.json tests/validation.json
+          python tools/package.py
+      - name: Compile the extracted install ZIP, not only the work tree
+        run: |
+          python -m zipfile -e artifacts/Aetheris_v1.1.0.zip .cache/extracted
+          python tools/validate.py --root .cache/extracted/shaders --compiler "$PWD/.cache/compiler/package/bin/glslangValidator.linux" --output artifacts/archive-validation.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aetheris-experimental
+          path: artifacts/

@@ -1,9 +1,13 @@
 # Release downloads
 
-These small ZIPs are intentionally tracked because the build environment blocks
-the GitHub release-asset upload host. `Aetheris_v1.0.1.zip` is the install pack;
-`Aetheris_SOURCE.zip` contains the named source folder, docs and build tools.
-Validate both with `sha256sum -c SHA256SUMS.txt` from this directory.
+Current experimental build: **Aetheris_v1.1.0.zip**.
+Source archive: **Aetheris_v1.1.0_SOURCE.zip**.
+Place only the install ZIP, unopened, in `.minecraft/shaderpacks/`.
+Reset old shader settings; start MEDIUM with experimental TAA OFF.
 
-Experimental: static GLSL checks passed; actual Minecraft/Iris/OptiFine runtime
-loading and visuals have not been verified. See the bundled README.
+These small archives are tracked because GitHub release-asset uploads are blocked
+in the sandbox. Verify the current pair with `sha256sum -c SHA256SUMS.txt` here.
+Older archives/tags are preserved for traceability, not recommended for new installs.
+
+Compilation and CPU/static regressions are tested. Minecraft/Iris/OptiFine visual
+and performance checks have not been run. See the bundled runtime matrix.

@@ -12,8 +12,8 @@ void main(){
 #ifndef HAND_PASS
  if(material==10003.0){p.xyz+=(gbufferModelView*vec4(sin((wp.x+cameraPosition.x)*0.6+frameTimeCounter*1.8)*0.025,0,0,0)).xyz;}
 #endif
- gl_Position=gl_ProjectionMatrix*p;
+ gl_Position=jitterClip(gl_ProjectionMatrix*p);
  positionV=p.xyz;positionW=wp+cameraPosition;
- normalV=normalize(gl_NormalMatrix*gl_Normal);uv=(gl_TextureMatrix[0]*gl_MultiTexCoord0).xy;
+ normalV=safeNormalize(gl_NormalMatrix*gl_Normal);uv=(gl_TextureMatrix[0]*gl_MultiTexCoord0).xy;
  lm=clamp((gl_TextureMatrix[1]*gl_MultiTexCoord1).xy,0.0,1.0);tint=gl_Color;
 }

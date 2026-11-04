@@ -1,14 +1,20 @@
 {
-  "type": "static GLSL compile/link (not Minecraft runtime)",
+  "type": "static GLSL compile/link and contract audit (not Minecraft runtime)",
+  "compiler": "Glslang Version: 10:11.7.0",
+  "source_sha256": "082ccf97a3428b47e8a64e4cd3131af436b0a198a2bd832f985ba5ac501296bb",
   "compiler_macros_injected": false,
-  "program_pairs": 20,
+  "program_pairs": 21,
   "variants": {
-    "LOW": 20,
-    "MEDIUM": 20,
-    "HIGH": 20,
-    "ULTRA": 20,
-    "HIGH_CAMERA": 20,
-    "NEUTRAL": 20
+    "LOW": 21,
+    "MEDIUM": 21,
+    "HIGH": 21,
+    "ULTRA": 21,
+    "DEFAULT": 21,
+    "HIGH_CAMERA": 21,
+    "NEUTRAL_DISABLED": 21,
+    "TEMPORAL_HIGH": 21,
+    "TEMPORAL_CAMERA": 21,
+    "EXTREMES": 21
   },
   "errors": [],
   "passed": true

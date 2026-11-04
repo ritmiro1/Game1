@@ -14,7 +14,7 @@ void main(){
 #ifdef ENTITY_PASS
  tex.rgb=mix(tex.rgb,entityColor.rgb,entityColor.a);
 #endif
- vec3 albedo=linearColor(tex.rgb);vec3 n=normalize(normalV);
+ vec3 albedo=linearColor(tex.rgb);vec3 n=safeNormalize(normalV);
  float metal=step(10019.5,material)*step(material,10020.5),rough=mix(0.82,0.24,metal);
  float emissive=0.0;
  if(material==10010.0||material==10011.0)emissive=1.0;
@@ -22,7 +22,7 @@ void main(){
  float water=0.0;
 #ifdef WATER_PASS
  water=1.0-step(0.5,abs(material-10001.0));
- if(water>0.5){vec3 wn=normalize(mat3(gbufferModelViewInverse)*n);wn=waveNormal(positionW,wn);n=normalize(mat3(gbufferModelView)*wn);rough=0.12;albedo=mix(albedo,vec3(0.025,0.12,0.14),0.8);tex.a=0.82;}
+ if(water>0.5){if(!gl_FrontFacing)n=-n;vec3 wn=safeNormalize(mat3(gbufferModelViewInverse)*n);wn=waveNormal(positionW,wn,length(positionV));n=safeNormalize(mat3(gbufferModelView)*wn);rough=0.12;albedo=mix(albedo,vec3(0.025,0.12,0.14),0.8);tex.a=0.82;}
 #endif
  float wet=wetness*lm.y*max(0.0,(mat3(gbufferModelViewInverse)*n).y)*(1.0-water);
  rough=mix(rough,0.18,wet*0.75);albedo*=1.0-wet*0.22;
@@ -36,5 +36,5 @@ void main(){
 #endif
  gl_FragData[0]=vec4(color,tex.a);
  gl_FragData[1]=vec4(n*0.5+0.5,rough);
- gl_FragData[2]=vec4(metal,water,lm.y,emissive);
+ gl_FragData[2]=vec4(metal,water,lm.y,noShadow>0.5?-1.0:emissive);
 }

@@ -1,2 +1,3 @@
 #version 120
-void main(){gl_Position=ftransform();}
+#include "/lib/common.glsl"
+void main(){gl_Position=jitterClip(ftransform());}

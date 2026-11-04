@@ -13,14 +13,24 @@ float aoAt(vec2 uv,vec3 p,vec3 n){float occ=0.0;
  }return 1.0-occ/float(AO_SAMPLES)*AO_STRENGTH;
 }
 vec3 bloomBlur(sampler2D tex,vec2 uv,vec2 direction){vec3 c=vec3(0);float w=0.0;for(int i=-4;i<=4;i++){float k=exp(-float(i*i)/8.0);c+=texture2D(tex,clamp(uv+direction*float(i),vec2(0.001),vec2(0.999))).rgb*k;w+=k;}return c/w;}
-vec3 fxaaColor(vec2 uv){vec2 px=1.0/vec2(viewWidth,viewHeight);vec3 c=texture2D(colortex0,uv).rgb;
-#if FXAA == 1
- vec3 n=texture2D(colortex0,uv+vec2(0,px.y)).rgb,s=texture2D(colortex0,uv-vec2(0,px.y)).rgb,e=texture2D(colortex0,uv+vec2(px.x,0)).rgb,w=texture2D(colortex0,uv-vec2(px.x,0)).rgb;
- vec3 l=vec3(0.299,0.587,0.114);float lc=dot(c,l),ln=dot(n,l),ls=dot(s,l),le=dot(e,l),lw=dot(w,l);
- float range=max(max(max(ln,ls),max(le,lw)),lc)-min(min(min(ln,ls),min(le,lw)),lc);
- vec2 dir=vec2(-(ln-ls),le-lw);dir=clamp(dir/(min(abs(dir.x),abs(dir.y))+0.0312),vec2(-4),vec2(4))*px;
- vec3 a=(texture2D(colortex0,uv+dir/6.0).rgb+texture2D(colortex0,uv-dir/6.0).rgb)*0.5;
- c=mix(c,a,smoothstep(0.05,0.25,range/max(lc,0.1)));
+// Spatial fallback when temporal AA is disabled. Compare bounded luminance so
+// a single HDR emissive doesn't force excessive blur over neighboring pixels.
+float aaLuma(vec3 c){float l=dot(max(c,vec3(0.0)),vec3(0.299,0.587,0.114));return l/(1.0+l);}
+vec3 fxaaColor(vec2 uv){
+ vec2 px=1.0/vec2(viewWidth,viewHeight);vec3 c=texture2D(colortex0,safeUV(uv)).rgb;
+#if FXAA == 1 && TAA == 0
+ vec3 n=texture2D(colortex0,safeUV(uv+vec2(0,px.y))).rgb,s=texture2D(colortex0,safeUV(uv-vec2(0,px.y))).rgb;
+ vec3 e=texture2D(colortex0,safeUV(uv+vec2(px.x,0))).rgb,w=texture2D(colortex0,safeUV(uv-vec2(px.x,0))).rgb;
+ float lc=aaLuma(c),ln=aaLuma(n),ls=aaLuma(s),le=aaLuma(e),lw=aaLuma(w);
+ float low=min(lc,min(min(ln,ls),min(le,lw))),high=max(lc,max(max(ln,ls),max(le,lw)));
+ float range=high-low;
+ if(range<max(0.025,high*0.125))return c;
+ vec2 dir=vec2(-(ln-ls),le-lw);
+ dir=clamp(dir/(min(abs(dir.x),abs(dir.y))+max((ln+ls+le+lw)*0.03125,0.0078125)),vec2(-6),vec2(6))*px;
+ vec3 a=0.5*(texture2D(colortex0,safeUV(uv+dir/6.0)).rgb+texture2D(colortex0,safeUV(uv-dir/6.0)).rgb);
+ vec3 b=a*0.5+0.25*(texture2D(colortex0,safeUV(uv+dir*0.5)).rgb+texture2D(colortex0,safeUV(uv-dir*0.5)).rgb);
+ float lb=aaLuma(b);c=(lb<low||lb>high)?a:b;
 #endif
- return c;}
+ return c;
+}
 #endif
