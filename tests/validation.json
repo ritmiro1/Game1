@@ -1,0 +1,14 @@
+{
+  "type": "static GLSL compile/link (not Minecraft runtime)",
+  "program_pairs": 20,
+  "variants": {
+    "LOW": 20,
+    "MEDIUM": 20,
+    "HIGH": 20,
+    "ULTRA": 20,
+    "HIGH_CAMERA": 20,
+    "NEUTRAL": 20
+  },
+  "errors": [],
+  "passed": true
+}
