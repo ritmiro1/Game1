@@ -1,5 +1,6 @@
 {
   "type": "static GLSL compile/link (not Minecraft runtime)",
+  "compiler_macros_injected": false,
   "program_pairs": 20,
   "variants": {
     "LOW": 20,

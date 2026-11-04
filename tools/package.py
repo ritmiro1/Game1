@@ -14,7 +14,7 @@ def archive(name,entries):
         assert all(not n.startswith('/') and '..' not in Path(n).parts for n in z.namelist())
     return path
 pack=ROOT/'Aetheris'
-install=archive('Aetheris_v1.0.0.zip',[(str(p.relative_to(pack)),p) for p in pack.rglob('*') if p.is_file()])
+install=archive('Aetheris_v1.0.1.zip',[(str(p.relative_to(pack)),p) for p in pack.rglob('*') if p.is_file()])
 with zipfile.ZipFile(install) as z:
     names=set(z.namelist());assert 'shaders/shaders.properties' in names
     assert len([n for n in names if n.endswith('.vsh')])>=12

@@ -1,4 +1,4 @@
-# AETHERIS 1.0.0
+# AETHERIS 1.0.1
 ### Original cinematic Minecraft shader pack · GLSL 1.20
 
 **Target:** Minecraft Java 1.21.4 with Iris (Fabric); secondary target OptiFine.
@@ -10,7 +10,7 @@ This is not a mod, resource pack, or datapack. No third-party shader source is u
 
 ## Install
 1. Install Minecraft Java 1.21.4 and a matching Iris + Fabric installation or OptiFine.
-2. Put `Aetheris_v1.0.0.zip` in `.minecraft/shaderpacks/` without extracting it.
+2. Put `Aetheris_v1.0.1.zip` in `.minecraft/shaderpacks/` without extracting it.
 3. Launch the game and open Video Settings → Shader Packs / Shaders.
 4. Select Aetheris, open Shader Pack Settings, and choose MEDIUM to start.
 

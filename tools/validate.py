@@ -20,7 +20,7 @@ def main():
     profiles['HIGH_CAMERA']={**profiles['HIGH'],'DOF':'1','MOTION_BLUR':'1','COLOR_GRADE':'2'}
     profiles['NEUTRAL']={**profiles['LOW'],'COLOR_GRADE':'0','FXAA':'0','VIGNETTE':'0','CLOUD_QUALITY':'0'}
     pairs=sorted(SHADERS.glob('*.vsh')); assert len(pairs)>=12
-    report={'type':'static GLSL compile/link (not Minecraft runtime)','program_pairs':len(pairs),'variants':{},'errors':[]}
+    report={'type':'static GLSL compile/link (not Minecraft runtime)','compiler_macros_injected':False,'program_pairs':len(pairs),'variants':{},'errors':[]}
     with tempfile.TemporaryDirectory() as td:
         for profile,opts in profiles.items():
             count=0
@@ -32,8 +32,6 @@ def main():
                     for k,v in opts.items():
                         text=re.sub(r'(#define\s+'+k+r')\s+[^\s/]+',lambda m:m[1]+' '+v,text)
                         text=re.sub(r'(const\s+\w+\s+'+k+r'\s*=\s*)[^;]+',lambda m:m[1]+v,text)
-                    # Iris / OptiFine inject symbolic framebuffer format constants.
-                    text=text.replace('#version 120','#version 120\n#define RGBA16F 34842',1)
                     dest=Path(td)/(vert.stem+'.'+ext);dest.write_text(text);inputs.append(str(dest))
                 p=subprocess.run([args.compiler,'-l',*inputs],text=True,capture_output=True)
                 if p.returncode:report['errors'].append({'profile':profile,'program':vert.stem,'log':p.stdout+p.stderr})

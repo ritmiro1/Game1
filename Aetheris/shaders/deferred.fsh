@@ -1,4 +1,9 @@
 #version 120
+// OpenGL GL_RGBA16F: GLSL 1.20 does not define texture-format enum names.
+// Keep the symbolic const declarations below for Iris/OptiFine format scanning.
+#ifndef RGBA16F
+#define RGBA16F 0x881A
+#endif
 #include "/lib/common.glsl"
 #include "/lib/noise.glsl"
 #include "/lib/post.glsl"
