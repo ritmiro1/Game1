@@ -1,0 +1,13 @@
+screen.ATMOSPHERE=Небо, облака и погода
+screen.LIGHTING=Освещение и затенение
+option.CLOUD_MODE=Режим облаков
+value.CLOUD_MODE.0=Выключены
+value.CLOUD_MODE.1=Ванильные (совместимость)
+value.CLOUD_MODE.2=Объёмные (дорого)
+value.CLOUD_MODE.3=Мягкие слоистые (сбалансированно)
+option.RAIN_OPACITY=Непрозрачность осадков
+option.WEATHER_HAZE=Погодная дымка снаружи
+option.BLOCK_LIGHT_WARMTH=Теплота блочного света
+option.BLOCK_LIGHT_WARMTH.comment=Общий оттенок lightmap, не определение типа каждого установленного источника.
+option.BLOCK_LIGHT_STRENGTH=Яркость блочного света
+option.CAVE_BRIGHTNESS=Читаемость пещер

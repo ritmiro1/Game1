@@ -1,0 +1,58 @@
+// OpenGL GL_RGBA16F: GLSL 1.20 does not define texture-format enum names.
+// Use GLSL constants, NOT macros: Iris scans format names AFTER preprocessing.
+#ifndef RGBA16F
+const int RGBA16F = 0x881A;
+#endif
+#ifndef RGBA8
+const int RGBA8 = 0x8058;
+#endif
+#include "/lib/common.glsl"
+#include "/lib/noise.glsl"
+#include "/lib/post.glsl"
+#include "/lib/sky.glsl"
+varying vec2 uv;
+#ifndef R32F
+const int R32F = 0x822E;
+#endif
+#ifdef AETHER_VELOCITY_ACTIVE
+const int colortex8Format = RGBA16F;
+#endif
+#if HIZ_SSR == 1
+const int colortex9Format = R32F;
+const int colortex10Format = R32F;
+const int colortex11Format = R32F;
+const int colortex12Format = R32F;
+#endif
+#ifdef AETHER_GI_ACTIVE
+const int colortex13Format = RGBA16F;
+const int colortex14Format = RGBA16F;
+const int colortex15Format = RGBA8;
+#endif
+const int colortex0Format = RGBA16F;
+const int colortex1Format = RGBA16F;
+const int colortex2Format = RGBA16F;
+const int colortex3Format = RGBA16F;
+const int colortex4Format = RGBA16F;
+const int colortex5Format = RGBA16F;
+const int colortex6Format = RGBA16F;
+// RGB F0 is required for material-ID metals too, not only LabPBR.
+const int colortex7Format = RGBA8;
+// Ping-pong history: RGB is scene-linear HDR, alpha is positive view depth.
+const bool colortex6Clear = false;
+const bool colortex0Clear = true;
+const bool colortex1Clear = true;
+const bool colortex2Clear = true;
+/* DRAWBUFFERS:03 */
+void main(){float d=texture2D(depthtex0,uv).r;vec3 c=texture2D(colortex0,uv).rgb;
+ if(d<0.99999){vec3 p=viewPosition(uv,d),n=normalize(texture2D(colortex1,uv).xyz*2.0-1.0);vec4 m=texture2D(colortex2,uv);if(m.a>=0.0)c*=mix(aoAt(uv,p,n),1.0,saturate(m.a));}
+ // Keep the direct scene unchanged. Remove point stars ONLY from the opaque
+ // reflection/refraction source, including background texels used by SSR filtering.
+ vec3 reflectionSource=c;
+ float sourceDepth=0.0;
+ if(d<0.99999){float marker=texture2D(colortex2,uv).a;
+  if(!(marker> -1.5 && marker< -0.5))sourceDepth=min(-viewPosition(uv,d).z,32000.0);
+  else reflectionSource=vec3(0.0);
+ }
+ if(d>=0.99999){vec3 ray=safeNormalize(mat3(gbufferModelViewInverse)*viewPosition(uv,1.0));reflectionSource=reflectionSky(ray);}
+ gl_FragData[0]=vec4(c,1);gl_FragData[1]=vec4(reflectionSource,sourceDepth);
+}
