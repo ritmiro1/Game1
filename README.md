@@ -1,20 +1,29 @@
-# Aetheris 1.2.0 — performance → materials → atmosphere
+# Aetheris 1.3.0 — advanced shader iteration
 
-Original Minecraft GLSL 1.20 shader pack targeting Iris/Fabric 1.21.4, with OptiFine
-as secondary target. **Experimental. No in-game or GPU benchmark certification.**
-Source: `Aetheris/shaders/`. See [features and limits](Aetheris/README.md) and
-[the runtime acceptance matrix](Aetheris/RUNTIME_TESTS.md).
+Original shader pack intended for Minecraft Java 1.21.4 / Iris (primary) and
+OptiFine (secondary). **Experimental: no in-game/GPU/FPS certification.**
+[Features/limits](Aetheris/README.md) · [exact requested-feature status (RU)](Aetheris/FEATURE_STATUS.ru.md)
+· [render graph](Aetheris/ARCHITECTURE.md) · [runtime gate](Aetheris/RUNTIME_TESTS.md)
 
-This iteration reduces unnecessary passes and effect-buffer resolution, adds opt-in
-LabPBR material decoding / bounded terrain POM, and introduces scattering modes,
-analytic height fog and optional reduced-resolution volumetric sky clouds.
-LAB_PBR/POM/TAA default OFF; start MEDIUM and test additions separately.
+Adds analytic foliage motion, Hi-Z SSR, screen-space indirect/visible-emissive
+colored lighting, tinted glass shadows, procedural caustics/shore foam, two cloud
+layers/visual fronts, puddles and dimension-specific art direction. **Full mob
+motion vectors and voxel light propagation are NOT implemented.** Cloud fronts do
+not alter actual regional rain/snow. These are not labelled complete substitutes.
 
-## Validate and package
-Python 3.11+, glslangValidator with GLSL 1.20 compatibility support. No test-only
-format macros or driver symbols are injected.
+## Sources / generated entry points
+Canonical stage bodies: `Aetheris/shaders/program/`. Shared code: `shaders/lib/`.
+Root/world-1/world1 wrappers are generated; never hand-edit them. Thirty base pairs
+× three dimensions × nineteen configurations = 1710 static pair checks per tree.
+All advanced color buffers are described in ARCHITECTURE.md. Modern 1.21.4 loaders
+must support RENDERTARGETS attachment remapping up to colortex15; GPU tests remain open.
+
+## Validate, test, package
+Python 3.11+ and glslangValidator with GLSL 1.20 compatibility support. No injected
+test-only format constants or fabricated driver symbols.
 
 ```sh
+python3 tools/sync_dimensions.py --check
 python3 tools/validate.py --compiler /path/to/glslangValidator
 GLSLANG_VALIDATOR=/path/to/glslangValidator python3 -m unittest discover -s tests -v
 python3 tools/performance_budget.py > artifacts/performance-budget.json
@@ -26,20 +35,12 @@ python3 tools/validate.py --root .cache/extracted/shaders \
   --compiler /path/to/glslangValidator --output artifacts/archive-validation.json
 ```
 
-23 program pairs × 15 configurations, including all features, disabled effects,
-quarter/full buffers, LabPBR/POM and TAA/camera combinations. The validator audits
-includes, options, a deliberately limited conditional-properties subset and program
-contracts. It does not emulate Iris/OptiFine, GPU state or rendering. Unit tests
-include negative RGBA16F and missing-gradient-extension regressions and reference
-math. Packaging is gated by the exact tested source digest. CI repeats validation,
-unit tests, packaging and compilation of the extracted ZIP.
+CI repeats the checks including extracted ZIP compilation and active sampler2D
+reflection against a 16-sampler budget. Conditional-property auditing covers only
+the subset used here; it is not an Iris/OptiFine emulator. Packaging refuses stale
+shader reports or wrapper drift. Analytic operation/memory counts are NOT GPU timing.
 
-`performance_budget.py` outputs **analytic operation/memory bounds, not measured
-FPS**. It excludes final upsampling, light/depth queries, overdraw and driver costs.
-For real profiling use the fixed-scene procedure in RUNTIME_TESTS.md.
-
-Install only `Aetheris_v1.2.0.zip`, unopened, in `.minecraft/shaderpacks/`; reset
-old shader settings. Source ZIPs are not install packs. Small release downloads
-are tracked in `downloads/` because the sandbox blocks GitHub's asset upload host.
-The `aetheris-v1.2.0` tag distinguishes this shader from an unrelated existing
-repository release called `v1.2.0`; historical releases are not overwritten.
+Install only `Aetheris_v1.3.0.zip` unopened in `.minecraft/shaderpacks/`, RESET old
+settings, start MEDIUM; enable expensive modes one at a time. Source ZIP is not a
+pack. Small ZIPs are tracked in downloads/ because the sandbox blocks release-asset
+uploads. Releases use `aetheris-v1.3.0`; unrelated existing tags are not overwritten.

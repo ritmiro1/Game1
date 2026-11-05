@@ -1,3 +1,2 @@
 #version 120
-#define HAND_PASS
-#include "/lib/geometry.vsh"
+#include "/program/gbuffers_hand_water.vsh"

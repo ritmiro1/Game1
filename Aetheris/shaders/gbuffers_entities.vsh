@@ -1,3 +1,2 @@
 #version 120
-#define ENTITY_PASS
-#include "/lib/geometry.vsh"
+#include "/program/gbuffers_entities.vsh"

@@ -20,6 +20,8 @@ jobs:
           npm pack glslang-validator-prebuilt-predownloaded@0.0.2
           tar -xzf glslang-validator-prebuilt-predownloaded-0.0.2.tgz
           chmod +x package/bin/glslangValidator.linux
+      - name: Dimension entry-point consistency
+        run: python tools/sync_dimensions.py --check
       - name: Contract audit and all compiler variants
         run: python tools/validate.py --compiler "$PWD/.cache/compiler/package/bin/glslangValidator.linux"
       - name: Unit and negative compiler regression tests

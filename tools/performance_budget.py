@@ -17,11 +17,14 @@ def estimate(options, width=1920, height=1080):
     return {'viewport': [width, height], 'effect_buffer': [int(width*scale), int(height*scale)],
             'bloom_filter_texture_reads_upper_bound': pixels * 14 if bloom else 0,
             'old_full_resolution_9_plus_9_read_reference': width * height * 18,
-            'cloud_primary_samples_upper_bound': pixels * int(values['CLOUD_STEPS']) if cloud else 0,
+            'cloud_primary_samples_upper_bound': pixels * int(values['CLOUD_STEPS']) * int(values['CLOUD_LAYERS']) if cloud else 0,
+            'hiz_minimum_reduction_reads_upper_bound': sum(int(width*s)*int(height*s)*9 for s in [0.5,0.25,0.125,0.0625]) if int(values['HIZ_SSR']) else 0,
+            'ssgi_candidate_rays_upper_bound': (width//2)*(height//2)*int(values['GI_SAMPLES']) if int(values['SSGI']) else 0,
+            'colored_emitter_candidates_upper_bound': (width//2)*(height//2)*int(values['GI_SAMPLES']) if int(values['COLORED_LIGHTS']) else 0,
             'taa_resolve_enabled': int(values['TAA']) == 1,
             'single_rgba16f_effect_target_bytes': pixels * 8,
             'labpbr_extra_single_rgba8_target_bytes': width*height*4 if int(values['LAB_PBR']) else 0,
-            'notes': 'Analytic only; excludes final upsample, depth/light queries, overdraw, driver allocations and GPU timing.'}
+            'notes': 'Analytic only; not a total frame cost; ray counts exclude per-ray depth/lighting/occlusion reads, final upsample, overdraw, driver allocations and GPU timing.'}
 
 
 def main():

@@ -16,7 +16,7 @@ from package import require_validation
 
 class ShaderContractTests(unittest.TestCase):
     def test_loader_contract(self):
-        self.assertEqual(len(audit()), 23)
+        self.assertEqual(len(audit()), 90)
 
     def test_disabled_passes_and_shared_effect_sizes(self):
         defaults = resolve_properties({})
@@ -59,11 +59,57 @@ class ShaderContractTests(unittest.TestCase):
         self.assertIn('*visibility*skyAccess', text)
 
     def test_cloud_buffer_reused_before_bloom(self):
-        self.assertIn('marchClouds(', (SHADERS / 'composite1.fsh').read_text())
-        self.assertIn('colortex4', (SHADERS / 'composite2.fsh').read_text())
-        self.assertIn('resolveTemporal(', (SHADERS / 'composite3.fsh').read_text())
-        self.assertIn('bright(', (SHADERS / 'composite4.fsh').read_text())
-        self.assertIn('bloomBlur(', (SHADERS / 'composite5.fsh').read_text())
+        self.assertIn('marchClouds(', expand(SHADERS / 'composite1.fsh'))
+        self.assertIn('colortex4', expand(SHADERS / 'composite2.fsh'))
+        self.assertIn('resolveTemporal(', expand(SHADERS / 'composite3.fsh'))
+        self.assertIn('bright(', expand(SHADERS / 'composite4.fsh'))
+        self.assertIn('bloomBlur(', expand(SHADERS / 'composite5.fsh'))
+
+    def test_dimension_entry_points_synced(self):
+        from sync_dimensions import sync
+        sync(check=True)
+        for world, macro in [('world-1','AETHER_NETHER'),('world1','AETHER_END')]:
+            self.assertEqual(len(list((SHADERS/world).glob('*.vsh'))),30)
+            self.assertIn('#define '+macro, (SHADERS/world/'final.fsh').read_text())
+            self.assertIn('return 0.0;', expand(SHADERS/world/'final.fsh'))
+        props=resolve_properties({'CLOUD_MODE':'2','COLORED_SHADOWS':'1'})
+        for world in ['world-1','world1']:
+            for name in ['shadow','composite1','composite2']:
+                self.assertEqual(props[f'program.{world}/{name}.enabled'],'false')
+
+    def test_indirect_and_hiz_pass_gates(self):
+        disabled=resolve_properties({})
+        for i in range(1,8):self.assertEqual(disabled[f'program.deferred{i}.enabled'],'false')
+        enabled=resolve_properties({'SSGI':'1','HIZ_SSR':'1'})
+        for i in range(1,8):self.assertNotIn(f'program.deferred{i}.enabled',enabled)
+        self.assertEqual(resolve_properties({'SSGI':'1','GI_TEMPORAL':'0'})['program.deferred6.enabled'],'false')
+
+    def test_motion_tracks_foliage_not_unknown_entity_animation(self):
+        v=expand(SHADERS/'gbuffers_terrain.vsh')
+        self.assertIn('frameTimeCounter-frameTime',v)
+        f=expand(SHADERS/'gbuffers_entities.fsh')
+        self.assertIn('Unknown animation: reject history',f)
+        self.assertIn('previousClip.w',f)
+        t=(SHADERS/'lib/temporal.glsl').read_text()
+        self.assertIn('previousUV=uv+motionData.xy',t)
+        self.assertIn('expected=motionData.z',t)
+
+    def test_hierarchy_samples_exact_texel_centers(self):
+        self.assertIn('floor(uv*size)',(SHADERS/'lib/hiz.glsl').read_text())
+        for i in range(1,5):
+            text=expand(SHADERS/f'deferred{i}.fsh')
+            self.assertIn('floor(t*parentSize)',text)
+            self.assertIn('nearestDepth=min(nearestDepth,z)',text)
+
+    def test_gi_never_upsamples_the_reserved_history_texel(self):
+        self.assertIn('if(t.y<1.0/size.y&&t.x<2.0/size.x)continue',expand(SHADERS/'deferred7.fsh'))
+        self.assertIn('meta.a== -dimensionTag()',expand(SHADERS/'deferred6.fsh'))
+
+    def test_tinted_shadow_uses_two_depth_maps(self):
+        s=(SHADERS/'lib/shadows.glsl').read_text()
+        for name in ['shadowtex0','shadowtex1','shadowcolor0']:self.assertIn(name,s)
+        self.assertIn('material==10030.0',expand(SHADERS/'shadow.fsh'))
+        self.assertIn('COLORED_LIGHTS.comment=Screen-space', (SHADERS/'lang/en_US.lang').read_text())
 
     def test_loader_uniform_types(self):
         text = (SHADERS / 'lib/common.glsl').read_text()
@@ -85,7 +131,7 @@ class ShaderContractTests(unittest.TestCase):
         self.assertIn('const bool colortex6Clear = false;', text)
 
     def test_water_still_composited_without_ssr(self):
-        text = (SHADERS / 'composite.fsh').read_text()
+        text = (SHADERS / 'program/composite.fsh').read_text()
         self.assertNotIn('#if REFLECTION_STEPS', text)
         self.assertIn('waterFresnel(', text)
         self.assertIn('waterTransmission(', text)
@@ -120,7 +166,7 @@ class ShaderContractTests(unittest.TestCase):
 
     def test_temporal_history_has_freshness_and_depth_checks(self):
         text = (SHADERS / 'lib/temporal.glsl').read_text()
-        for guard in ['meta.a== -1.0', 'meta.x-viewWidth', 'meta.y-viewHeight',
+        for guard in ['meta.a== -dimensionTag()', 'meta.x*16.0+extra.y-viewWidth', 'meta.y*16.0+extra.z-viewHeight',
                       'frameCounter-1', 'history.a-expected', 'material.g>0.5', 'material.a< -0.5']:
             self.assertIn(guard, text)
 
@@ -178,6 +224,39 @@ class NumericTests(unittest.TestCase):
         for camera_y, ray_y, expected in [(64, 1, (128, 192)), (300, -1, (44, 108)), (220, 1, (0, 36))]:
             a,b=(192-camera_y)/ray_y,(256-camera_y)/ray_y
             self.assertEqual((max(0, min(a,b)), max(a,b)), expected)
+
+    def test_half_float_viewport_metadata_handles_large_odd_sizes(self):
+        import struct
+        half=lambda x:struct.unpack('e',struct.pack('e',x))[0]
+        for size in [319,1081,1919,2561,3839,5119,8191,16383,32767]:
+            self.assertEqual(half(size//16)*16+half(size%16),size)
+
+    def test_split_frame_counter_cannot_reuse_modulo_only_history(self):
+        for frame in [3,1023,1024,65535,720719]:
+            low=(frame-1)%1024;upper=(frame-1)//1024
+            self.assertEqual(upper*1024+low,frame-1)
+            stale=frame-1-1024
+            if stale>=0:self.assertNotEqual(stale//1024,upper)
+        self.assertIn('extra.x-floor(float(frameCounter-1)/1024.0)',(SHADERS/'lib/temporal.glsl').read_text())
+
+    def test_projective_cell_exit_reference(self):
+        # q=(0,0,-2), ray=(0.5,0,-0.5), desired x/w=0.1.
+        c_x,c_w,d_x,d_w,boundary=0.0,2.0,0.5,0.5,0.1
+        t=(boundary*c_w-c_x)/(d_x-boundary*d_w)
+        self.assertGreater(t,0)
+        self.assertAlmostEqual((c_x+d_x*t)/(c_w+d_w*t),boundary)
+
+    def test_depth_minimum_reduction_conservative(self):
+        values=[40.0,2.0,30.0,8.0,80.0,1.0,60.0]
+        for left in range(0,len(values)-1,2):
+            reduced=min(values[max(0,left):min(len(values),left+3)])
+            self.assertLessEqual(reduced,min(values[left:left+2]))
+
+    def test_colored_transmission_finite_bounded(self):
+        for value in [0.0,0.02,0.5,1.0]:
+            trans=math.exp(-(1.0-value**2.2)*0.75*3.0)
+            self.assertTrue(0.0<trans<=1.0)
+        self.assertAlmostEqual(math.exp(-(1.0-1.0)*3),1.0)
 
     def test_ycocg_roundtrip(self):
         for r, g, b in [(0, 0, 0), (0.1, 0.2, 0.3), (12, 0.1, 4), (1, 1, 1)]:

@@ -1,2 +1,2 @@
 #version 120
-#include "/lib/geometry.vsh"
+#include "/program/gbuffers_textured.vsh"

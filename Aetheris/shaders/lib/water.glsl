@@ -25,4 +25,16 @@ float waterFresnel(float cosineV,bool underwater){
  return saturate((rs*rs+rp*rp)*0.5);
 }
 vec3 waterTransmission(float distanceV){return exp(-vec3(0.22,0.065,0.045)*clamp(distanceV,0.0,64.0)*WATER_ABSORPTION);}
+// Procedural light-focusing approximation, not refractive ray tracing.
+float causticPattern(vec3 worldP){
+ vec2 p=mod(worldP.xz,vec2(4096.0));float time=frameTimeCounter*0.45;
+ float a=abs(sin(p.x*2.8+sin(p.y*1.7+time)+time));
+ float b=abs(sin(p.y*3.1+sin(p.x*1.4-time)-time));
+ return pow(max(0.0,1.0-min(a,b)),8.0);
+}
+float shoreFoam(vec3 worldP,float thickness){
+ float edge=1.0-smoothstep(0.08,0.8,thickness);
+ float breakup=0.5+0.5*aetherNoise(worldP.xz*3.0+frameTimeCounter*0.3);
+ return edge*breakup*FOAM_STRENGTH;
+}
 #endif

@@ -1,14 +1,14 @@
 # Release downloads
 
-Current experimental build: **Aetheris_v1.2.0.zip**.
-Source: **Aetheris_v1.2.0_SOURCE.zip**.
-Install only the first ZIP, unopened, in `.minecraft/shaderpacks/`; reset old
-settings and start MEDIUM. LAB_PBR/POM/TAA remain OFF unless explicitly enabled.
+Current experimental build: **Aetheris_v1.3.0.zip**.
+Source: **Aetheris_v1.3.0_SOURCE.zip**. Tag: `aetheris-v1.3.0`.
+Install only the first ZIP, unopened, in `.minecraft/shaderpacks/`, reset settings
+and start MEDIUM. HIGH/ULTRA add more expensive optional modes.
 
-Release tag: `aetheris-v1.2.0` (the repository's pre-existing `v1.2.0` is unrelated).
-These small archives are tracked because the sandbox blocks release-asset uploads.
-Verify the current pair with `sha256sum -c SHA256SUMS.txt` in this directory.
-Older tagged downloads are preserved for traceability.
+Read FEATURE_STATUS.ru.md: full mob motion vectors / voxel light are NOT implemented;
+visible-source gather is not world propagation, visual fronts do not change local rain.
+In-game loading/visuals/FPS have not been validated. Do not infer runtime success
+from the compiler test counts.
 
-Static/CPU checks do not certify Minecraft loading, visuals or FPS. Read the bundled
-README and RUNTIME_TESTS.md before enabling experimental material/cloud options.
+ZIPs are tracked because the sandbox blocks release-asset uploads. Verify the current
+pair with `sha256sum -c SHA256SUMS.txt` here. Historical tagged downloads are preserved.

@@ -15,7 +15,8 @@ vec3 resolveTemporal(vec2 uv,vec3 current,float depth,out float historyDepth){
  if(unstable || frameCounter<2 || length(cameraPosition-previousCameraPosition)>2.0)return current;
  // Reserved history texel: reject resize, stale frames, AA toggles and fresh buffers.
  vec4 meta=texture2D(colortex6,0.5/vec2(viewWidth,viewHeight));
- if(!(meta.a== -1.0 && abs(meta.x-viewWidth)<0.6 && abs(meta.y-viewHeight)<0.6 && abs(meta.z-mod(float(frameCounter-1),1024.0))<0.25))return current;
+ vec4 extra=texture2D(colortex6,vec2(1.5,0.5)/vec2(viewWidth,viewHeight));
+ if(!(meta.a== -dimensionTag() && extra.a== -dimensionTag() && abs(extra.x-floor(float(frameCounter-1)/1024.0))<0.25 && abs(meta.x*16.0+extra.y-viewWidth)<0.6 && abs(meta.y*16.0+extra.z-viewHeight)<0.6 && abs(meta.z-mod(float(frameCounter-1),1024.0))<0.25))return current;
  vec3 previousP;
  if(sky){vec3 direction=mat3(gbufferModelViewInverse)*safeNormalize(p);previousP=mat3(gbufferPreviousModelView)*direction;}
  else{vec3 worldP=worldRelative(p)+cameraPosition-previousCameraPosition;previousP=(gbufferPreviousModelView*vec4(worldP,1.0)).xyz;}
@@ -24,8 +25,12 @@ vec3 resolveTemporal(vec2 uv,vec3 current,float depth,out float historyDepth){
  vec2 previousUV=clip.xy/clip.w*0.5+0.5+temporalJitter(frameCounter-1);
  vec2 edge=1.5/vec2(viewWidth,viewHeight);
  if(any(lessThan(previousUV,edge))||any(greaterThan(previousUV,1.0-edge)))return current;
- vec4 history=texture2D(colortex6,previousUV);
  float expected=sky?min(far,32000.0):max(-previousP.z,0.0);
+#ifdef AETHER_VELOCITY_ACTIVE
+ if(!sky){vec4 motionData=texture2D(colortex8,uv);if(motionData.w<0.99)return current;previousUV=uv+motionData.xy;expected=motionData.z;}
+#endif
+ if(any(lessThan(previousUV,edge))||any(greaterThan(previousUV,1.0-edge)))return current;
+ vec4 history=texture2D(colortex6,previousUV);
  // This also rejects invalid/uninitialized depth and NaN alpha on a fresh buffer.
  if(!(history.a>0.0 && abs(history.a-expected)<max(0.06,expected*0.015)))return current;
  vec3 lo=toYCoCg(current),hi=lo;

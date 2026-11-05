@@ -63,3 +63,38 @@ record median and p95 frame time (milliseconds), not just an FPS screenshot. Rep
 three runs. Compare base, bloom off, quarter/half/full, LabPBR, POM and volume clouds
 one at a time. Record VRAM through a GPU profiler, not logical buffer-size estimates.
 No such captures have been made here.
+
+## 1.3.0 requested directions — ALL NOT RUN in Minecraft
+
+- Inspect each new mode individually, then together, on Iris and OptiFine with
+  GPU/driver, resolution, profile, dimension, resource pack and screenshots recorded.
+- TAA/blur foliage motion vs camera-only: leaf motion should not create persistent
+  trails. Mobs/bones are intentionally invalid history, NOT real motion vectors.
+  Check disocclusion, unknown entity markers, hands, sky and dimension-tag resets.
+- Hi-Z: compare linear SSR and hierarchy at shallow angles, thin geometry, odd
+  resolutions, near/far camera planes and screen edges. Check conservative minima
+  and that hierarchy descent fits within the selected ray budget. Temporal reflection
+  filtering requires TAA. No new off-screen geometry is reconstructed.
+- SSGI: colored-wall bounce, enclosed room, silhouettes, bright sources, moving
+  entities, GI_TEMPORAL on/off, TAA on/off. Inspect leakage, noise, afterimages,
+  thin-wall failures and the reserved GI-history texel near the upper-left corner.
+- Visible-emitter colored gather: compare lava/glowstone in view vs hidden/offscreen.
+  Offscreen contribution is NOT expected: this is not voxel/world light propagation.
+- Glass shadows: white/red/blue/black panes over floor, sun angle/bias/PCF, tinted
+  glass, opaque roof behind glass, multi-pane limitations and depth0/depth1 ordering.
+- Caustics: shallow/deep lake above/below water, night, overhang, submerged ceiling;
+  shoreline foam on horizontal water only. No physical/splash simulation expected.
+- Clouds: below/between/above both layers, ray direction reversal, coverage fronts,
+  sun visibility, no double vanilla/volume clouds; actual local precipitation is
+  still Minecraft-global/biome-driven, not controlled by this visual front field.
+- Puddles: fresh rain, prolonged rain, clear weather + drying, porous vs nonporous,
+  walls/undersides, opaque roof, puddle ripples vs no rain, transitions into Nether/End.
+- All profiles and portal travel in Overworld/Nether/End: correct entry point paths,
+  fog/exposure/sky, no Overworld clouds/sun shadows outside Overworld, no old history.
+- Inspect full attachment allocation (colortex0–15) and draw-slot remapping, active
+  samplers, actual VRAM, p50/p95 frame time. Static reflection is not a driver test.
+
+Two major acceptance gaps remain: full previous mob/bone transforms are not part
+of this pack's common loader contract, and no voxel backend is supplied. A future
+backend must gather world geometry/emissive data and implement propagation; merely
+renaming the current gather is not a solution.

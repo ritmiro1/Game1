@@ -1,3 +1,2 @@
 #version 120
-#include "/lib/common.glsl"
-void main(){gl_Position=jitterClip(ftransform());}
+#include "/program/gbuffers_skybasic.vsh"

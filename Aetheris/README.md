@@ -1,113 +1,102 @@
-# AETHERIS 1.2.0 — performance → materials → atmosphere
+# AETHERIS 1.3.0 — experimental advanced screen-space rendering
 
-Original GLSL 1.20 shader pack for Minecraft Java. Intended targets: **Iris/Fabric
-1.21.4**, then OptiFine 1.21.4. This is a shader pack, not a mod or resource pack.
-**EXPERIMENTAL.** Static compiler/CPU checks are automated. No Minecraft or GPU
-runtime is installed in the build environment: loader behavior, visuals, memory
-allocation and FPS are NOT verified. All new rendering modes need runtime review.
+Original Minecraft shader pack, **not a mod/resource pack/datapack**.
+Intended targets: Iris/Fabric 1.21.4, then OptiFine 1.21.4, modern desktop OpenGL.
+GLSL 1.20 syntax with an optional guarded texture-gradient extension for LabPBR/POM.
+**No Minecraft/GPU runtime is available here: compilation is NOT in-game certification.**
 
-## Install / update
-1. Install matching Minecraft Java 1.21.4 and Iris/Fabric or OptiFine.
-2. Remove the old Aetheris install ZIP from `.minecraft/shaderpacks/`.
-3. Put **Aetheris_v1.2.0.zip** there without extracting it. The ZIP has `shaders/`
-   directly at its root. The SOURCE ZIP is development source, not an install pack.
-4. Select Aetheris, **reset old shader settings**, start with MEDIUM.
-5. Leave LAB_PBR/POM/TAA/DOF/motion blur OFF for the initial baseline.
+**Not all nine requested features are complete:** analytic motion tracks this pack's
+foliage, not mob/bone animation; colored lighting is visible-emitter screen space,
+NOT voxel light propagation; moving cloud fronts do NOT change Minecraft's actual
+regional rain/snow. See [precise Russian feature status](FEATURE_STATUS.ru.md).
 
-## 1. Performance-first changes (not a measured FPS claim)
-- The temporal resolve/history write is disabled at loader-program level when TAA
-  is OFF, rather than copying a full-resolution image every frame.
-- BLOOM_ENABLED=0 disables both bloom programs and the final bloom sample.
-- Bloom and volumetric clouds share a temporary target at quarter/half/full width
-  and height. HALF is the default; LOW uses QUARTER. Clouds finish reading it before
-  bloom overwrites it. Both bloom targets use matching reduced dimensions.
-- Vertical Gaussian blur pairs adjacent taps: 5 reads vs the former 9. Horizontal
-  bright filtering uses 9 reads. At half dimensions that is an analytic 3.5 filter
-  reads per full-resolution pixel vs the old 18 (excluding final upsampling).
-  This is a shader-operation estimate, **not** an equivalent FPS improvement.
-- AO fades out at its configured distance and skips its loop at strength zero.
-  Emissive light is protected from AO darkening; hands skip AO.
-- SSR has a maximum distance and decreases its step budget with distance.
-- Shadow blocker/PCF searches are skipped for hands, surfaces without sky access
-  and unlit-facing surfaces unless subsurface lighting needs visibility.
-- LabPBR and volume clouds cost extra; selecting ULTRA is not an optimization.
-  Run `tools/performance_budget.py` for analytic bounds, not benchmark results.
+## Install
+Place `Aetheris_v1.3.0.zip` unopened in `.minecraft/shaderpacks/`, remove the old
+install ZIP, select the pack, RESET old settings and start MEDIUM. The install ZIP
+has `shaders/` at root. SOURCE ZIPs are not shader packs. Add features one at a time;
+TAA, LabPBR and POM remain opt-in. ULTRA is substantially more expensive than MEDIUM.
 
-## 2. Opt-in LabPBR materials and limited POM
-Enable **MATERIALS → LAB_PBR=1** only with compatible resource-pack `_n` and `_s`
-maps. If available, enable normal/specular maps in your loader. No resource pack
-or third-party textures are bundled.
-
-Supported LabPBR-style channel subset:
-- `_n`: RG tangent-space normal XY; B ambient occlusion; A height for POM.
-- `_s`: R perceptual smoothness (BRDF squares roughness to GGX alpha);
-  G dielectric F0 / conductor IDs 230–237, with generic conductor fallback for
-  other metal IDs; B porosity 0–64 or subsurface 65–255; A emission 0–254.
-  **Alpha 255 means no mapped emission**, not maximum emission.
-- Conductor F0 uses RGB approximations and Schlick Fresnel, not full complex-IOR
-  angular Fresnel. Normal-map AO affects ambient, not direct light. Porosity affects
-  wet darkening; subsurface is a modest backlight approximation, not diffusion.
-- Neutral missing maps keep block-ID roughness/F0/emission defaults. Texture map
-  detection is heuristic; an intentionally all-zero specular map is ambiguous.
-- Mapped RGB F0 is retained for reflections in an optional linear RGBA8 attachment
-  (4 bytes per pixel per logical image, before any loader/driver buffering).
-- Tangent frames are derived in the fragment shader, avoiding extra tangent varyings.
-
-**POM=1 requires LAB_PBR=1**, authored height data, and terrain UV metadata.
-It is OFF by default, terrain-only, limited to 12/24/48 blocks, clamped to the
-current atlas tile with a half-texel inset, and capped at 8/12/20 steps. Mapped foliage
-is excluded. It changes sampled texture position, not geometry/depth or silhouettes.
-Pure-black/white initial height texels are treated as flat/missing data; extreme
-height fields may therefore show discontinuities. No POM self-shadowing yet.
-Optional guarded GL_ARB_shader_texture_lod gradients preserve the original texture
-footprint through the ray march where available; an implicit-LOD fallback compiles
-without the extension but may be less stable. Resource-pack/driver validation remains open.
-
-## 3. Atmosphere, height fog and clouds
-- ATMOSPHERE_QUALITY=0 keeps the gradient; 1 uses a cheap air-mass approximation;
-  2 integrates single scattering with 6 view × 4 light samples, Rayleigh/Mie density,
-  ozone absorption and planet occlusion. This is not a multiple-scattering solver.
-  Reflections retain the cheaper fit rather than repeating the full atmosphere march.
-- Height fog analytically integrates an exponential density field along the view ray,
-  with rain-dependent extinction and modest directional inscattering. It is disabled
-  underwater, where the existing water extinction handles attenuation once.
-- CLOUD_MODE=0 off; 1 shaded vanilla cloud geometry; 2 experimental volume layer.
-  LOW/MEDIUM/HIGH keep mode 1; ULTRA selects mode 2.
-- Volume clouds use a 192–256-block sky layer with height-dependent 3D density,
-  wind, coverage/rain response, short light-density queries and early transmittance
-  termination. The march is capped at CLOUD_STEPS and uses the reduced effect target.
-- Sky-neighbor-aware upsampling prevents clouds drawing over opaque terrain edges.
-  Volume clouds are composed before optional TAA and bloom so the sun is attenuated
-  before bloom extraction. No volume cloud contribution inside terrain pixels yet:
-  this is a sky-layer renderer, not an arbitrary foreground cloud/fog volume.
-- Ground shadows share cloud footprint/wind and project along the light direction,
-  but use an optical-depth approximation rather than the exact rendered volume.
-  Reflection fallback uses a cheap projected cloud estimate, not the full volume.
+## New code by requested direction
+1. **Analytic motion:** current/previous foliage deformation, previous-camera clip
+   projection, compact motion/depth/validity buffer; TAA and motion blur consume it.
+   Unknown moving entities/block entities/hands reject history; no invented uniforms
+   or fake entity vectors. Full per-object/bone motion requires loader integration.
+2. **Hi-Z SSR:** four min-depth raster levels, exact projective cell-exit calculation,
+   conservative texel-center reads, hierarchy descent, bounded steps, hit refinement
+   and roughness filtering. Temporal reflection filtering uses the common TAA path,
+   so enable TAA to test it; no separate reflection-history cache or off-screen tracing.
+3. **SSGI:** bounded screen-space hemisphere rays, diffuse albedo, half-size current
+   radiance and optional depth/history-rejected temporal filtering. One approximate
+   bounce, not global/path-traced illumination. Four-neighbor depth-aware upsample.
+4. **Visible-source colored lights:** samples emissive pixels with bounded distance,
+   inverse-square-style falloff and screen-space obstacle checks. Hidden/off-screen
+   sources cannot contribute; not a voxel volume and may leak at missing screen data.
+5. **Colored glass shadows:** opaque/translucent depths plus RGB transmittance,
+   filtered with PCF/PCSS-style shadows. Nearest transparent layer only, no spectral
+   multi-layer absorption. Tinted glass has an opaque transmission marker.
+6. **Water:** optional animated procedural caustics under sun/sky access, shallow
+   shoreline foam with breakup/up-facing gating. Not physical caustic tracing,
+   fluid simulation or waterfall splash particles.
+7. **Clouds:** two sky-volume layers (192–256 and 320–352 blocks), separate drift,
+   sorted near-to-far integration, visual coverage fronts and rain response. Still
+   sky-only volume; front fields do not control actual local weather particles.
+8. **Puddles:** horizontal/sky-access/porosity masks, wetness accumulation, puddle
+   smoothing/ripples, glossy approximation and loader drying half-life control.
+   Overworld only; no drainage simulation or physically layered clearcoat BRDF.
+9. **Dimension art direction:** generated world-1/world1 entry points, warm Nether
+   ambient/fog without sun/clouds; violet End atmosphere/nebula, its own light/fog/
+   exposure. Dimension-tagged history rejects cross-dimension reuse. No Overworld
+   sun shadows/cloud passes in those dimensions; actual transitions remain untested.
 
 ## Profiles
-| Profile | Effects scale | Atmosphere | Clouds | Shadow | AO | SSR |
-|---|---|---|---|---|---|---|
-| LOW | quarter each axis | gradient | vanilla | 1024 / 4 PCF | 4, 24 blocks | off |
-| MEDIUM | half each axis | air-mass fit | vanilla | 2048 / 8 PCF | 8, 48 blocks | 8, 48 blocks |
-| HIGH | half each axis | air-mass fit | vanilla | 2048 / 8 PCF | 16, 64 blocks | 16, 64 blocks |
-| ULTRA | half each axis | single scatter | volume, 20 steps | 4096 / 16 PCF | 16, 96 blocks | 32, 96 blocks |
+| Profile | Additional advanced features |
+|---|---|
+| LOW | Advanced features off, quarter effects, no SSR/shafts |
+| MEDIUM | Puddles and shoreline foam; no SSGI/colored gather/Hi-Z |
+| HIGH | Hi-Z SSR, glass transmission, caustics, puddles, foam |
+| ULTRA | HIGH plus SSGI/visible-source colored light, two cloud layers/visual fronts |
 
-LAB_PBR, POM and TAA remain opt-in and are not enabled automatically by profiles.
-Settings persist: reset first, then pick a profile. Defaults lie between MEDIUM/HIGH.
-Volume clouds, LabPBR and POM can be enabled separately for A/B testing.
+Previous shadow/AO/SSR sampling scales remain. TAA/LabPBR/POM are never switched on
+by profiles. MOTION_VECTORS is used only when TAA, blur or indirect-light features
+need it. All advanced passes are gated; disabling GI or Hi-Z disables their raster
+passes for every dimension. Defaults are conservative; reset before selecting profiles.
 
-## Previous features retained
-GGX/Smith/Schlick lighting; distorted PCF / PCSS-style shadows; animated water with
-Fresnel/internal reflection, depth-checked refraction and SSR; propagated block and
-held lights; emissive block IDs; procedural celestial bodies/stars; wetness; AO;
-ACES-style tone mapping, exposure, grading, optional DOF/camera blur and experimental
-TAA with depth/history rejection. TAA lacks per-object motion vectors and may ghost.
+## Previous rendering retained
+Material-ID GGX/Smith/Schlick lighting, PCF/PCSS, water Fresnel/internal reflection/
+refraction, propagated vanilla and held light, emissive blocks, atmospheric gradient/
+air-mass/single-scattering modes, analytic height fog, bloom, exposure, ACES-style
+tone mapping, color grading and optional camera effects. No third-party shader code.
 
-## Remaining limitations
-No PTGI/SSGI, hierarchical SSR, colored shadow transmission, caustics/foam, snow
-accumulation, weather-front simulation, physical multiple scattering, POM depth
-writes/self-shadowing or dedicated Nether/End art direction. No production-ready
-quality/FPS claim. The explicit runtime acceptance matrix remains **NOT RUN**.
+## LabPBR/POM
+Enable LAB_PBR only with a compatible resource pack (_n/_s maps; none bundled).
+_n RG: normal XY; B: ambient AO; A: height. _s R: smoothness; G: dielectric F0 or
+conductor IDs; B: porosity/subsurface; A: emission 0–254, **255 reserved/no emission**.
+RGB conductor F0/Schlick and subsurface are approximations, not complete complex-IOR
+Fresnel/diffusion. Neutral missing spec maps keep material-ID defaults; detection is
+heuristic. Optional RGBA8 F0 is retained for reflections. Derivative tangent frames.
+POM is terrain-only, distance/step-limited, atlas-clamped with half-texel inset;
+foliage excluded. Height extrema are treated as flat/missing initial data. No depth
+writes, silhouette displacement or POM self-shadows. Optional texture gradients
+preserve original mip footprint; the fallback may be less stable. Both need runtime tests.
 
-## License
-MIT; see LICENSE.txt. Original shader code; channel conventions follow LabPBR.
+## Validation and cost
+30 base program pairs with generated Overworld/Nether/End entries: 90 entry pairs.
+19 configurations cover feature combinations, totaling 1710 pair compile/link
+checks per source tree, repeated on the extracted ZIP. CPU/static/negative compiler
+regressions and sampler-budget reflection are included. Packaging binds the ZIP to
+the tested source hash and checks generated wrappers. This does NOT emulate loader
+preprocessing, framebuffer state or GPU driver behavior.
+
+Hi-Z adds four raster passes/targets; GI adds up to three passes, two half-size HDR
+images and a full-size albedo target; analytic motion adds a full-size HDR target.
+At most six simultaneous geometry output slots, not a claim about driver VRAM.
+The analytic budget tool is not an FPS benchmark. TAA/GI history together can add
+latency/trails; test GI_TEMPORAL=0 when diagnosing TAA ghosting. CPU reference tests
+do not execute shader math on the GPU. See ARCHITECTURE.md and RUNTIME_TESTS.md.
+
+## Remaining work
+Full mob/object motion vectors, voxel/world lighting, true regional precipitation,
+multiple-scattering atmosphere, foreground cloud volumes, physical caustics/foam,
+full layered transparency and real cross-GPU visual/performance acceptance.
+
+MIT license; see LICENSE.txt.

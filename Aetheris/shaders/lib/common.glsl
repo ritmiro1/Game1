@@ -7,7 +7,7 @@ uniform mat4 shadowModelView, shadowProjection;
 uniform mat4 gbufferPreviousModelView, gbufferPreviousProjection;
 uniform vec3 cameraPosition, previousCameraPosition;
 uniform vec3 sunPosition, moonPosition, shadowLightPosition;
-uniform float viewWidth, viewHeight, frameTimeCounter;
+uniform float viewWidth, viewHeight, frameTimeCounter, frameTime;
 uniform float rainStrength, wetness, near, far, sunAngle;
 uniform int frameCounter;
 uniform int worldTime, worldDay, moonPhase, isEyeInWater;
@@ -20,9 +20,18 @@ uniform sampler2D texture, lightmap;
 uniform sampler2D normals, specular;
 uniform ivec2 atlasSize;
 #endif
-uniform sampler2D colortex0, colortex1, colortex2, colortex3, colortex4, colortex5, colortex6, colortex7;
-uniform sampler2D depthtex0, depthtex1, shadowtex0;
+uniform sampler2D colortex0, colortex1, colortex2, colortex3, colortex4, colortex5, colortex6, colortex7, colortex8, colortex9, colortex10, colortex11, colortex12, colortex13, colortex14, colortex15;
+uniform sampler2D depthtex0, depthtex1, shadowtex0, shadowtex1, shadowcolor0;
 const float PI=3.14159265;
+float dimensionTag(){
+#ifdef AETHER_NETHER
+ return 2.0;
+#elif defined(AETHER_END)
+ return 3.0;
+#else
+ return 1.0;
+#endif
+}
 float saturate(float x){return clamp(x,0.0,1.0);}
 vec3 linearColor(vec3 c){return pow(max(c,vec3(0.0)),vec3(2.2));}
 // Eight-sample Halton (2,3), expressed without GLSL 1.20 array constructors.
@@ -55,15 +64,41 @@ vec3 worldRelative(vec3 p){return (gbufferModelViewInverse*vec4(p,1.0)).xyz;}
 vec2 projectView(vec3 p){vec4 q=gbufferProjection*vec4(p,1.0);return q.xy/q.w*0.5+0.5+temporalJitter(frameCounter);}
 // Solar elevation in WORLD space: camera rotation must not change time of day.
 float solarHeight(){return (mat3(gbufferModelViewInverse)*safeNormalize(sunPosition)).y;}
-float dayAmount(){return smoothstep(-0.10,0.14,solarHeight());}
+float dayAmount(){
+#ifdef AETHER_NETHER
+ return 0.0;
+#elif defined(AETHER_END)
+ return 0.15;
+#else
+ return smoothstep(-0.10,0.14,solarHeight());
+#endif
+}
+vec3 primaryLightDirectionV(){
+#ifdef AETHER_END
+ return safeNormalize(mat3(gbufferModelView)*vec3(0.3,0.8,-0.4));
+#else
+ return safeNormalize(shadowLightPosition);
+#endif
+}
 vec3 sunlight(){float h=smoothstep(0.0,0.45,solarHeight());return mix(vec3(2.3,0.68,0.23),vec3(3.5,3.25,2.95),h);}
 vec3 lightColor(){
+#ifdef AETHER_NETHER
+ return vec3(0.0);
+#elif defined(AETHER_END)
+ return vec3(0.22,0.16,0.34);
+#else
  float h=solarHeight();float sunPower=smoothstep(-0.04,0.07,h);
  float moonPower=(1.0-smoothstep(-0.14,0.02,h))*(0.25+0.75*(0.5+0.5*cos(float(moonPhase)*PI/4.0)));
  return (sunlight()*sunPower+vec3(0.055,0.082,0.145)*moonPower*NIGHT_BRIGHTNESS)*(1.0-0.78*rainStrength);
+#endif
 }
 // Eye-brightness exposure proxy, smoothed by the loader, not scene-luminance metering.
 float adaptedExposure(){
+#ifdef AETHER_NETHER
+ return EXPOSURE*1.15;
+#elif defined(AETHER_END)
+ return EXPOSURE*1.5;
+#else
 #if AUTO_EXPOSURE == 1
  float sky=pow(saturate(float(eyeBrightnessSmooth.y)/240.0),2.0);
  float block=pow(saturate(float(eyeBrightnessSmooth.x)/240.0),3.0);
@@ -71,6 +106,7 @@ float adaptedExposure(){
  return EXPOSURE*clamp(0.20/(0.055+level),0.65,2.6);
 #else
  return EXPOSURE;
+#endif
 #endif
 }
 #endif

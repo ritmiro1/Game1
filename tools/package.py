@@ -6,6 +6,7 @@ import re
 import zipfile
 from pathlib import Path
 from validate import ROOT, SHADERS, audit, source_digest
+from sync_dimensions import sync
 
 
 def archive(path, entries):
@@ -40,6 +41,7 @@ def main():
         raise ValueError('Run tools/validate.py before packaging')
     report = json.loads(report_path.read_text())
     require_validation(report)
+    sync(check=True)
     audit()
     version = (ROOT / 'Aetheris/VERSION').read_text().strip()
     if not re.fullmatch(r'\d+\.\d+\.\d+', version):

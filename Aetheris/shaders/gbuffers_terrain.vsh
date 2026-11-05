@@ -1,3 +1,2 @@
 #version 120
-#define TERRAIN_PASS
-#include "/lib/geometry.vsh"
+#include "/program/gbuffers_terrain.vsh"

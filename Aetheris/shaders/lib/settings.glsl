@@ -1,5 +1,25 @@
 #ifndef AETHERIS_SETTINGS
 #define AETHERIS_SETTINGS
+#define MOTION_VECTORS 1 // [0 1]
+#define HIZ_SSR 0 // [0 1]
+#define SSGI 0 // [0 1]
+#define COLORED_LIGHTS 0 // [0 1]
+#define GI_SAMPLES 8 // [4 8 16]
+#define GI_STRENGTH 0.4 // [0.2 0.4 0.7 1.0]
+#define GI_TEMPORAL 1 // [0 1]
+#define COLORED_RADIUS 8.0 // [4.0 8.0 12.0]
+#define COLORED_STRENGTH 1.0 // [0.5 1.0 2.0]
+#define COLORED_SHADOWS 0 // [0 1]
+#define SHADOW_TINT_STRENGTH 0.75 // [0.5 0.75 1.0]
+#define CAUSTICS 0 // [0 1]
+#define CAUSTIC_STRENGTH 0.25 // [0.1 0.25 0.5]
+#define FOAM 0 // [0 1]
+#define FOAM_STRENGTH 0.5 // [0.25 0.5 0.75 1.0]
+#define PUDDLES 0 // [0 1]
+#define PUDDLE_AMOUNT 0.6 // [0.3 0.6 1.0]
+#define CLOUD_LAYERS 1 // [1 2]
+#define WEATHER_FRONTS 0 // [0 1]
+#define FRONT_STRENGTH 0.5 // [0.25 0.5 1.0]
 #define PCSS 1 // [0 1]
 #define SHADOW_BLOCKER_SAMPLES 4 // [4 8]
 #define SHADOW_SOFTNESS 1.0 // [0.5 1.0 1.5 2.0]
@@ -47,9 +67,18 @@
 #define FXAA 1 // [0 1]
 const int shadowMapResolution = 2048; // [1024 2048 4096 8192]
 const float shadowDistance = 128.0; // [64.0 96.0 128.0 192.0]
+const float wetnessHalflife = 40.0;
+const float drynessHalflife = 200.0; // [80.0 200.0 400.0]
 const float eyeBrightnessHalflife = 4.0;
 const float sunPathRotation = -30.0;
 // Raw depth samples are compared manually for PCF.
 const bool shadowHardwareFiltering = false;
 const bool shadowtex0Nearest = true;
+const bool shadowtex1Nearest = true;
+#if MOTION_VECTORS == 1 && (TAA == 1 || MOTION_BLUR == 1 || SSGI == 1 || COLORED_LIGHTS == 1)
+#define AETHER_VELOCITY_ACTIVE
+#endif
+#if SSGI == 1 || COLORED_LIGHTS == 1
+#define AETHER_GI_ACTIVE
+#endif
 #endif

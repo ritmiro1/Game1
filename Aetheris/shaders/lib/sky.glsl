@@ -2,6 +2,14 @@
 #define AETHERIS_SKY
 #include "/lib/scattering.glsl"
 vec3 skyRadiance(vec3 ray,bool fullQuality){
+#ifdef AETHER_NETHER
+ return mix(vec3(0.035,0.005,0.002),vec3(0.16,0.025,0.006),pow(1.0-abs(ray.y),3.0));
+#elif defined(AETHER_END)
+ vec2 coord=vec2(atan(ray.z,ray.x),asin(clamp(ray.y,-1.0,1.0)));
+ float nebula=fbm(coord*5.0+frameTimeCounter*0.0008);
+ float star=step(0.9985,hash12(floor(coord*750.0)))*pow(max(0.0,1.0-length(fract(coord*750.0)-0.5)*2.0),8.0);
+ return mix(vec3(0.006,0.003,0.018),vec3(0.10,0.025,0.16),pow(nebula,3.0))+vec3(0.4,0.35,0.6)*star;
+#else
  vec3 sun=normalize(mat3(gbufferModelViewInverse)*sunPosition);float day=dayAmount(),h=saturate(ray.y);
  float horizon=pow(1.0-abs(ray.y),5.0);float dusk=1.0-smoothstep(0.02,0.35,abs(sun.y));
  vec3 c=mix(vec3(0.004,0.008,0.024),mix(vec3(0.25,0.48,0.78),vec3(0.035,0.17,0.44),sqrt(h)),day);
@@ -31,6 +39,7 @@ vec3 skyRadiance(vec3 ray,bool fullQuality){
  float band=pow(max(0.0,1.0-abs(dot(ray,normalize(vec3(0.3,0.8,0.5))))),24.0);
  c+=(vec3(stars)*1.8+vec3(0.012,0.014,0.025)*band*fbm(starUV*0.02))*(1.0-day)*smoothstep(0.0,0.2,ray.y);
  return mix(c,vec3(dot(c,vec3(0.25,0.6,0.15)))*0.6,rainStrength*0.8);
+#endif
 }
 vec3 atmosphere(vec3 ray){return skyRadiance(ray,false);}
 vec3 renderSky(vec3 ray){return skyRadiance(ray,true);}

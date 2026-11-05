@@ -4,17 +4,46 @@
 #include "/lib/lighting.glsl"
 #include "/lib/water.glsl"
 #include "/lib/materials.glsl"
+#include "/lib/puddles.glsl"
 varying vec2 uv,lm;
 varying vec4 tint;
 varying vec3 normalV,positionV,positionW;
 varying float material;
+#ifdef AETHER_VELOCITY_ACTIVE
+varying vec4 previousClip;
+#endif
 #if LAB_PBR == 1 && POM == 1 && defined(TERRAIN_PASS)
 varying vec4 tileBounds;
 #endif
+// RENDERTARGETS accepts attachment indices 10..15; GLSL output slots stay < 8.
 #if LAB_PBR == 1
-/* DRAWBUFFERS:0127 */
+#if defined(AETHER_VELOCITY_ACTIVE) && defined(AETHER_GI_ACTIVE)
+/* RENDERTARGETS:0,1,2,7,8,15 */
+#define VELOCITY_TARGET 4
+#define ALBEDO_TARGET 5
+#elif defined(AETHER_VELOCITY_ACTIVE)
+/* RENDERTARGETS:0,1,2,7,8 */
+#define VELOCITY_TARGET 4
+#elif defined(AETHER_GI_ACTIVE)
+/* RENDERTARGETS:0,1,2,7,15 */
+#define ALBEDO_TARGET 4
 #else
-/* DRAWBUFFERS:012 */
+/* RENDERTARGETS:0,1,2,7 */
+#endif
+#else
+#if defined(AETHER_VELOCITY_ACTIVE) && defined(AETHER_GI_ACTIVE)
+/* RENDERTARGETS:0,1,2,8,15 */
+#define VELOCITY_TARGET 3
+#define ALBEDO_TARGET 4
+#elif defined(AETHER_VELOCITY_ACTIVE)
+/* RENDERTARGETS:0,1,2,8 */
+#define VELOCITY_TARGET 3
+#elif defined(AETHER_GI_ACTIVE)
+/* RENDERTARGETS:0,1,2,15 */
+#define ALBEDO_TARGET 3
+#else
+/* RENDERTARGETS:0,1,2 */
+#endif
 #endif
 void main(){
  vec3 geometricN=safeNormalize(normalV);vec2 sampleUV=uv;
@@ -38,7 +67,7 @@ void main(){
  vec3 albedo=linearColor(tex.rgb),n=geometricN;
  float metal=step(10019.5,material)*step(material,10020.5),rough=mix(0.82,0.24,metal);
  vec3 f0=mix(vec3(0.04),albedo,metal);
- float emissive=0.0,ambientAO=1.0,porosity=0.0,sss=material==10003.0?0.15:0.0;
+ float emissive=0.0,ambientAO=1.0,porosity=mix(0.35,0.0,metal),sss=material==10003.0?0.15:0.0;
  if(material==10010.0||material==10011.0)emissive=1.0;
  if(material==10012.0)emissive=0.4;
 #if LAB_PBR == 1 && !defined(WEATHER_PASS) && !defined(WATER_PASS)
@@ -58,7 +87,18 @@ void main(){
  }
 #endif
  float wet=wetness*lm.y*max(0.0,(mat3(gbufferModelViewInverse)*geometricN).y)*(1.0-water);
+#if defined(AETHER_NETHER) || defined(AETHER_END)
+ wet=0.0;
+#endif
  rough=mix(rough,0.18,wet*0.75);albedo*=1.0-wet*(0.22+porosity*0.25);
+#if PUDDLES == 1
+ if(water<0.5 && material!=10003.0){
+  vec3 worldN=safeNormalize(mat3(gbufferModelViewInverse)*n);
+  float puddle=puddleCoverage(positionW,worldN,lm.y,porosity);
+  n=safeNormalize(mat3(gbufferModelView)*puddleNormal(positionW,worldN,puddle));
+  rough=mix(rough,0.08,puddle);f0=mix(f0,vec3(0.02037),puddle*0.6);albedo*=1.0-puddle*0.15;
+ }
+#endif
  float noShadow=0.0;
 #ifdef HAND_PASS
  noShadow=1.0;
@@ -69,7 +109,24 @@ void main(){
 #endif
  gl_FragData[0]=vec4(color,tex.a);
  gl_FragData[1]=vec4(n*0.5+0.5,rough);
- gl_FragData[2]=vec4(metal,water,lm.y,noShadow>0.5?-1.0:emissive);
+ float marker=noShadow>0.5?-1.0:emissive;
+#ifdef ENTITY_PASS
+ marker= -2.0; // Unknown animation: reject history instead of inventing entity velocity.
+#endif
+ gl_FragData[2]=vec4(metal,water,lm.y,marker);
+#ifdef AETHER_VELOCITY_ACTIVE
+ vec4 motion=vec4(0);
+#if !defined(HAND_PASS) && !defined(ENTITY_PASS) && !defined(WEATHER_PASS)
+ if(water<0.5 && previousClip.w>0.0){
+  vec2 oldUV=previousClip.xy/previousClip.w*0.5+0.5+temporalJitter(frameCounter-1);
+  motion=vec4(oldUV-gl_FragCoord.xy/vec2(viewWidth,viewHeight),min(previousClip.w,32000.0),1.0);
+ }
+#endif
+ gl_FragData[VELOCITY_TARGET]=motion;
+#endif
+#ifdef AETHER_GI_ACTIVE
+ gl_FragData[ALBEDO_TARGET]=vec4(clamp(albedo,0.0,1.0),porosity);
+#endif
 #if LAB_PBR == 1
  gl_FragData[3]=vec4(clamp(f0,0.0,1.0),ambientAO);
 #endif

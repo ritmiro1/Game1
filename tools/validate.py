@@ -108,16 +108,28 @@ def variants(root=SHADERS):
     profiles['FAST_DISABLED'] = {**profiles['LOW'], 'BLOOM_ENABLED': '0', 'CLOUD_MODE': '0',
                                  'AO_STRENGTH': '0.0', 'FOG_DENSITY': '0.0'}
     profiles['VOLUME_QUARTER'] = {**profiles['ULTRA'], 'EFFECT_RESOLUTION': '0', 'CLOUD_STEPS': '8'}
+    profiles['MOTION_HIZ_GI'] = {**profiles['TEMPORAL_HIGH'], 'HIZ_SSR': '1', 'SSGI': '1'}
+    profiles['COLORED_PUDDLES'] = {**profiles['HIGH'], 'COLORED_LIGHTS': '1', 'COLORED_SHADOWS': '1',
+                                  'PUDDLES': '1', 'CAUSTICS': '1', 'FOAM': '1'}
+    profiles['NINE_DIRECTIONS'] = {**profiles['ALL_FEATURES'], 'HIZ_SSR': '1', 'SSGI': '1',
+                                  'COLORED_LIGHTS': '1', 'COLORED_SHADOWS': '1', 'PUDDLES': '1',
+                                  'CAUSTICS': '1', 'FOAM': '1', 'CLOUD_LAYERS': '2', 'WEATHER_FRONTS': '1'}
+    profiles['GI_NO_HISTORY'] = {**profiles['COLORED_PUDDLES'], 'SSGI': '1', 'GI_TEMPORAL': '0', 'MOTION_VECTORS': '0'}
     return profiles
 
 
 def audit(root=SHADERS):
-    pairs = sorted(root.glob('*.vsh'))
+    folders=[root,root/'world-1',root/'world1']
+    pairs = sorted(p for folder in folders for p in folder.glob('*.vsh'))
+    expected={p.name for p in root.glob('*.vsh')}
+    for folder in folders[1:]:
+        if {p.name for p in folder.glob('*.vsh')} != expected:
+            raise ValueError('Incomplete dimension program set: '+str(folder))
     if len(pairs) < 12:
         raise ValueError('At least twelve program pairs are required')
-    if {p.stem for p in pairs} != {p.stem for p in root.glob('*.fsh')}:
+    if {p.with_suffix('.fsh') for p in pairs} != {p for folder in folders for p in folder.glob('*.fsh')}:
         raise ValueError('Orphan shader stage')
-    for path in [*pairs, *root.glob('*.fsh')]:
+    for path in [*pairs, *[p.with_suffix('.fsh') for p in pairs]]:
         text = expand(path, root=root)
         if not text.startswith('#version 120\n') or len(re.findall(r'^\s*#version', text, re.M)) != 1:
             raise ValueError(f'Invalid or repeated GLSL version: {path.name}')
@@ -145,7 +157,7 @@ def audit(root=SHADERS):
     for key in declared:
         # Declaration plus at least one actual use (ignores profile/menu mentions).
         if len(re.findall(r'\b' + re.escape(key) + r'\b', text)) < 2 and key not in {
-                'shadowMapResolution', 'shadowDistance'}:
+                'shadowMapResolution', 'shadowDistance', 'drynessHalflife'}:
             raise ValueError(f'Unused setting: {key}')
     return pairs
 
@@ -160,28 +172,36 @@ def main():
     pairs = audit(root)
     report = {'type': 'static GLSL compile/link and contract audit (not Minecraft runtime)',
               'compiler': subprocess.check_output([args.compiler, '--version'], text=True).splitlines()[0],
-              'source_sha256': source_digest(root), 'compiler_macros_injected': False,
-              'program_pairs': len(pairs), 'variants': {}, 'pipeline_contracts': {}, 'errors': []}
+              'source_sha256': source_digest(root), 'compiler_macros_injected': False, 'max_active_sampler2D_uniforms': 0,
+              'program_pairs': len(pairs), 'base_program_pairs': len(list(root.glob('*.vsh'))),
+              'dimension_pairs': {('overworld' if d==root else str(d.relative_to(root))): len(list(d.glob('*.vsh'))) for d in [root,root/'world-1',root/'world1']}, 'variants': {}, 'pipeline_contracts': {}, 'errors': []}
     with tempfile.TemporaryDirectory() as directory:
         for profile, options in variants(root).items():
             properties = resolve_properties(options, root)
-            enabled = [p.stem for p in pairs if p.stem.startswith('composite')
+            enabled = [p.stem for p in pairs if p.parent==root and p.stem.startswith('composite')
                        and properties.get('program.' + p.stem + '.enabled', 'true') != 'false']
             report['pipeline_contracts'][profile] = {
                 'enabled_composite_programs': enabled,
                 'buffer4_scale': properties['size.buffer.colortex4'],
                 'buffer5_scale': properties['size.buffer.colortex5'],
-                'vanilla_clouds': properties['clouds']}
+                'vanilla_clouds': properties['clouds'],
+                'enabled_deferred_programs': [p.stem for p in pairs if p.parent==root and p.stem.startswith('deferred') and properties.get('program.'+p.stem+'.enabled','true')!='false'],
+                'dimension_suppression': {world: [name for name in ['shadow','composite1','composite2'] if properties.get('program.'+world+'/'+name+'.enabled')=='false'] for world in ['world-1','world1']}}
+
             for vertex in pairs:
                 inputs = []
                 for source, extension in [(vertex, 'vert'), (vertex.with_suffix('.fsh'), 'frag')]:
                     text = apply_options(expand(source, root=root), options)
-                    target = Path(directory) / (vertex.stem + '.' + extension)
+                    target = Path(directory) / (vertex.relative_to(root).with_suffix('').as_posix().replace('/', '__') + '.' + extension)
                     target.write_text(text)
                     inputs.append(str(target))
-                result = subprocess.run([args.compiler, '-l', *inputs], text=True, capture_output=True, timeout=30)
+                result = subprocess.run([args.compiler, '-l', '-q', *inputs], text=True, capture_output=True, timeout=30)
+                sampler_count=len(re.findall(r'^.+: .*type 8b5e,',result.stdout,re.M))
+                report['max_active_sampler2D_uniforms']=max(report['max_active_sampler2D_uniforms'],sampler_count)
+                if sampler_count>16:
+                    report['errors'].append({'profile':profile,'program':vertex.relative_to(root).as_posix(),'log':'Exceeds GL 3.3 minimum fragment sampler budget: '+str(sampler_count)})
                 if result.returncode:
-                    report['errors'].append({'profile': profile, 'program': vertex.stem,
+                    report['errors'].append({'profile': profile, 'program': vertex.relative_to(root).with_suffix('').as_posix(),
                                              'log': result.stdout + result.stderr})
             report['variants'][profile] = len(pairs)
     report['passed'] = not report['errors']
