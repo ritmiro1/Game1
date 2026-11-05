@@ -1,4 +1,4 @@
-# Aetheris 1.3.1 — advanced shader iteration
+# Aetheris 1.3.2 — advanced shader iteration
 
 Original shader pack intended for Minecraft Java 1.21.4 / Iris (primary) and
 OptiFine (secondary). **Experimental: no in-game/GPU/FPS certification.**
@@ -10,6 +10,13 @@ colored lighting, tinted glass shadows, procedural caustics/shore foam, two clou
 layers/visual fronts, puddles and dimension-specific art direction. **Full mob
 motion vectors and voxel light propagation are NOT implemented.** Cloud fronts do
 not alter actual regional rain/snow. These are not labelled complete substitutes.
+
+## 1.3.2 star-reflection hotfix
+Separate direct sky stars from a star-free reflection environment; clean sky-depth
+SSR source texels and preserve them through GI resolve. Direct sky stars and broad
+night lighting/sun/moon remain. No global highlight clamp, new buffers or GPU quality
+claims. [Art-reference goals](Aetheris/ART_DIRECTION.ru.md) record the distinction
+between the user's first bug frame and the remaining reference frames.
 
 ## 1.3.1 screenshot hotfix
 Fixes symbolic framebuffer formats being macro-expanded before Iris parsed them;
@@ -47,7 +54,7 @@ reflection against a 16-sampler budget. Conditional-property auditing covers onl
 the subset used here; it is not an Iris/OptiFine emulator. Packaging refuses stale
 shader reports or wrapper drift. Analytic operation/memory counts are NOT GPU timing.
 
-Install only `Aetheris_v1.3.1.zip` unopened in `.minecraft/shaderpacks/`, RESET old
+Install only `Aetheris_v1.3.2.zip` unopened in `.minecraft/shaderpacks/`, RESET old
 settings, start MEDIUM; enable expensive modes one at a time. Source ZIP is not a
 pack. Small ZIPs are tracked in downloads/ because the sandbox blocks release-asset
-uploads. Releases use `aetheris-v1.3.1`; unrelated existing tags are not overwritten.
+uploads. Releases use `aetheris-v1.3.2`; unrelated existing tags are not overwritten.

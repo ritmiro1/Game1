@@ -112,3 +112,17 @@ renaming the current gather is not a solution.
   preserved nearby ripples, world X/Z=0 and 4096 seams, and SSR off/linear/Hi-Z.
 - Check rod texture/bloom after resetting old settings (emission default changed).
   A white emissive model is not itself a proof of an HDR failure.
+
+
+## 1.3.2 star reflection gate — NOT RUN here
+- Use the same night shore view as the FIRST bug screenshot, reset settings, keep
+  time/FOV/resolution fixed, and record a clip with waves + camera movement.
+- Compare LOW (SSR off), MEDIUM (linear SSR), HIGH (Hi-Z SSR), ULTRA (GI resolve),
+  plus TAA on/off and GI_TEMPORAL on/off. Check that no point-star field returns
+  through reflection fallback, SSR silhouette filter taps, or GI source overwrite.
+- Direct sky still has stars; sun/moon/broad night radiance and reflected geometry /
+  emissive objects must remain. Inspect Overworld and End; Nether has no star layer.
+- Test sunset/day and above/below water, opaque shoreline edges, portals, and both
+  loader families. This removes unresolved point stars rather than physically
+  preintegrating their tiny reflected energy; no claim of full reflection antialiasing.
+- Remaining submitted images are REFERENCES, not evidence of bugs in this build.

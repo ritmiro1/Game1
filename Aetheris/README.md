@@ -1,4 +1,4 @@
-# AETHERIS 1.3.1 — experimental advanced screen-space rendering
+# AETHERIS 1.3.2 — experimental advanced screen-space rendering
 
 Original Minecraft shader pack, **not a mod/resource pack/datapack**.
 Intended targets: Iris/Fabric 1.21.4, then OptiFine 1.21.4, modern desktop OpenGL.
@@ -9,6 +9,16 @@ GLSL 1.20 syntax with an optional guarded texture-gradient extension for LabPBR/
 foliage, not mob/bone animation; colored lighting is visible-emitter screen space,
 NOT voxel light propagation; moving cloud fronts do NOT change Minecraft's actual
 regional rain/snow. See [precise Russian feature status](FEATURE_STATUS.ru.md).
+
+## 1.3.2: stable star-free reflection environment
+Direct sky rendering retains point stars. Water/material reflections deliberately
+omit point stars from their environment, retaining broad night radiance/nebula,
+sun and moon. The opaque reflection/refraction source uses this environment only
+at sky depth, so SSR neighborhood filtering cannot blend point stars from adjacent
+background pixels. GI resolve preserves this background. Opaque reflected geometry
+and emissive objects are not brightness-clamped to fix stars. No new buffers/passes;
+this is omission of unresolved stellar points, not physical stellar-light integration.
+No in-game before/after test is available. Art references are in ART_DIRECTION.ru.md.
 
 ## Screenshot-feedback hotfix (1.3.1)
 Format enums are shipped as **GLSL const integers, not macros**. Iris scans their
@@ -22,7 +32,7 @@ adds an explicitly artistic neutral floor, with 0 for darkness. Default emission
 1.5 and vignette is off. User before/after confirmation remains pending.
 
 ## Install
-Place `Aetheris_v1.3.1.zip` unopened in `.minecraft/shaderpacks/`, remove the old
+Place `Aetheris_v1.3.2.zip` unopened in `.minecraft/shaderpacks/`, remove the old
 install ZIP, select the pack, RESET old settings and start MEDIUM. The install ZIP
 has `shaders/` at root. SOURCE ZIPs are not shader packs. Add features one at a time;
 TAA, LabPBR and POM remain opt-in. ULTRA is substantially more expensive than MEDIUM.

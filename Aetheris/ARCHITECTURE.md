@@ -10,14 +10,16 @@ its canonical body. Never hand-edit generated wrappers. CI and packaging check t
    RGB glass transmittance in shadowcolor0, blending disabled. Closest layer only.
 2. Opaque gbuffer: forward lighting + normal/roughness + material masks, optional
    mapped F0, analytic motion and albedo. Unknown entity motion has invalid velocity.
-3. deferred: AO and pre-translucent HDR copy.
+3. deferred: AO and pre-translucent HDR copy. Sky-depth source texels use a
+   reflection environment without point stars; direct scene color stays untouched.
 4. deferred1–4: optional conservative minimum-depth reductions at half/quarter/
    eighth/sixteenth size. R32F values are positive view depth, sky is min(far,32000).
    Texel-center sampling is mandatory: interpolated min depths are NOT conservative.
 5. deferred5: optional half-size SSGI / visible-emitter colored-light gather.
 6. deferred6: optional half-size indirect history, depth rejection and neighborhood
    clipping. First two texels are reserved metadata, not displayable GI radiance.
-7. deferred7: depth-aware upsample/add GI; update both scene and opaque reflection copy.
+7. deferred7: depth-aware upsample/add GI; update scene and opaque reflection copy.
+   Preserve star-free background source texels instead of restoring visible sky stars.
 8. Translucent forward geometry; composite water/refraction/SSR, caustics/foam/shafts.
 9. composite1–2: optional reduced-size cloud layers then sky-aware full-size combine.
 10. composite3: optional TAA; reflections are temporally filtered here with the scene.

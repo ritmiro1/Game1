@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.2 — 2026-11-05, point-star reflection hotfix
+
+- Split the visible sky from the reflection environment: point stars stay in the
+  direct Overworld/End sky but are intentionally omitted from reflected radiance.
+  Broad atmosphere/nebula, sun and moon are retained, not globally dimmed.
+- Use this environment for water/material reflection fallback and sky-depth texels
+  in the opaque SSR/refraction source. This also prevents SSR filter taps at geometry
+  silhouettes from blending bright point stars out of the background.
+- GI resolve preserves the star-free background rather than copying the visible
+  star field into the reflection source again. No additional render target/pass.
+- First submitted frame is a bug report; the other frames are art-direction
+  references, NOT additional Aetheris bug evidence. See ART_DIRECTION.ru.md.
+- Static regressions added; no local Minecraft/GPU reproduction or claim of parity
+  with the reference shader pack. Physical stellar energy integration is not supplied:
+  this is a deliberate omission of unresolved point stars in reflections.
+
+
 ## 1.3.1 — 2026-11-05, screenshot-feedback hotfix
 
 - Fix a real Iris loader contract bug: enum macros expanded RGBA16F/RGBA8/R32F

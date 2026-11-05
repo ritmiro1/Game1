@@ -20,5 +20,9 @@ void main(){
   }
   if(weight>0.0001)color+=sum/weight;
  }
- gl_FragData[0]=vec4(color,1);gl_FragData[1]=vec4(color,1);
+ // GI updates opaque surfaces, but must not copy the visible star field back
+ // into background texels of the deliberately star-free reflection source.
+ vec3 reflectionSource=color;
+ if(depth>=0.99999)reflectionSource=texture2D(colortex3,uv).rgb;
+ gl_FragData[0]=vec4(color,1);gl_FragData[1]=vec4(reflectionSource,1);
 }

@@ -9,6 +9,7 @@ const int RGBA8 = 0x8058;
 #include "/lib/common.glsl"
 #include "/lib/noise.glsl"
 #include "/lib/post.glsl"
+#include "/lib/sky.glsl"
 varying vec2 uv;
 #ifndef R32F
 const int R32F = 0x822E;
@@ -46,5 +47,9 @@ const bool colortex2Clear = true;
 /* DRAWBUFFERS:03 */
 void main(){float d=texture2D(depthtex0,uv).r;vec3 c=texture2D(colortex0,uv).rgb;
  if(d<0.99999){vec3 p=viewPosition(uv,d),n=normalize(texture2D(colortex1,uv).xyz*2.0-1.0);vec4 m=texture2D(colortex2,uv);if(m.a>=0.0)c*=mix(aoAt(uv,p,n),1.0,saturate(m.a));}
- gl_FragData[0]=vec4(c,1);gl_FragData[1]=vec4(c,1);
+ // Keep the direct scene unchanged. Remove point stars ONLY from the opaque
+ // reflection/refraction source, including background texels used by SSR filtering.
+ vec3 reflectionSource=c;
+ if(d>=0.99999){vec3 ray=safeNormalize(mat3(gbufferModelViewInverse)*viewPosition(uv,1.0));reflectionSource=reflectionSky(ray);}
+ gl_FragData[0]=vec4(c,1);gl_FragData[1]=vec4(reflectionSource,1);
 }

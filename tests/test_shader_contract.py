@@ -130,6 +130,23 @@ class ShaderContractTests(unittest.TestCase):
         self.assertIn('const int colortex6Format = RGBA16F;', text)
         self.assertIn('const bool colortex6Clear = false;', text)
 
+    def test_reflection_environment_excludes_point_stars_but_direct_sky_keeps_them(self):
+        sky=(SHADERS/'lib/sky.glsl').read_text()
+        self.assertIn('reflectionSky(vec3 ray){return skyRadiance(ray,false,false);}',sky)
+        self.assertIn('renderSky(vec3 ray){return skyRadiance(ray,true,true);}',sky)
+        self.assertIn('if(pointStars)star=',sky) # End
+        self.assertIn('if(pointStars)stars=',sky) # Overworld
+        self.assertIn('cloudSkyFallback(reflectionSky(rayW),rayW)',(SHADERS/'program/composite.fsh').read_text())
+
+    def test_ssr_background_is_star_free_and_gi_does_not_restore_stars(self):
+        deferred=(SHADERS/'program/deferred.fsh').read_text()
+        self.assertIn('if(d>=0.99999)',deferred)
+        self.assertIn('reflectionSource=reflectionSky(ray)',deferred)
+        self.assertIn('gl_FragData[0]=vec4(c,1)',deferred) # actual visible sky unchanged
+        gi=(SHADERS/'program/deferred7.fsh').read_text()
+        self.assertIn('if(depth>=0.99999)reflectionSource=texture2D(colortex3,uv).rgb;',gi)
+        self.assertIn('gl_FragData[1]=vec4(reflectionSource,1)',gi)
+
     def test_water_still_composited_without_ssr(self):
         text = (SHADERS / 'program/composite.fsh').read_text()
         self.assertNotIn('#if REFLECTION_STEPS', text)

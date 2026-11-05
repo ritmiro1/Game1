@@ -19,7 +19,7 @@ void main(){
   vec3 ray=reflect(safeNormalize(p),n);
   // Sky reflections are reduced indoors, rather than glowing in closed caves.
   vec3 rayW=safeNormalize(mat3(gbufferModelViewInverse)*ray);
-  vec3 fallback=cloudSkyFallback(atmosphere(rayW),rayW)*pow(saturate(material.b),2.0);
+  vec3 fallback=cloudSkyFallback(reflectionSky(rayW),rayW)*pow(saturate(material.b),2.0);
   if(isEyeInWater==1)fallback=vec3(0.012,0.065,0.085)*mix(0.12,1.0,dayAmount());
   vec3 reflected=reflectedScene(p,n,nr.a,fallback);
   if(water){
