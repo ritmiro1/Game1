@@ -1,15 +1,27 @@
 #ifndef AETHERIS_WATER
 #define AETHERIS_WATER
-// Analytic gradients avoid finite-difference cancellation and keep waves smooth.
-vec3 waveNormal(vec3 p,vec3 n,float distanceV){
+// Pixel-footprint filtering is evaluated in the fragment caller, never in vertices.
+// Integer Fourier wavevectors keep mod-4096 wrapping continuous at world seams.
+vec2 periodicWaterVector(vec2 k){return floor(k*(4096.0/(2.0*PI))+0.5)*(2.0*PI/4096.0);}
+vec2 filteredWaveSlope(vec2 x,vec2 direction,float frequency,float time,float height,vec2 dx,vec2 dy){
+ vec2 k=periodicWaterVector(direction*frequency);
+ vec2 warpK=periodicWaterVector(vec2(-direction.y,direction.x)*0.31);
+ float warp=dot(x,warpK)+time*0.27;
+ float phase=dot(x,k)+time+0.6*sin(warp);
+ vec2 gradient=k+warpK*0.6*cos(warp);
+ vec2 footprint=vec2(dot(gradient,dx),dot(gradient,dy));
+ float filterWeight=exp(-0.5*dot(footprint,footprint));
+ return gradient*(height*cos(phase)*filterWeight);
+}
+vec3 waveNormal(vec3 p,vec3 n,vec2 dx,vec2 dy){
  vec2 x=mod(p.xz,vec2(4096.0));float t=mod(frameTimeCounter,4096.0);
- vec2 d0=vec2(0.8,0.6),d1=vec2(-0.4,0.916515),d2=vec2(0.95,-0.31225);
- vec2 slope=d0*cos(dot(x,d0)*1.5+t*1.2)*0.0525;
+ vec2 slope=filteredWaveSlope(x,vec2(0.8,0.6),1.12,t*1.05,0.021,dx,dy);
+ slope+=filteredWaveSlope(x,vec2(-0.937,0.349),0.63,-t*0.73,0.030,dx,dy);
 #if WATER_QUALITY > 1
- slope+=d1*cos(dot(x,d1)*3.2-t*1.6)*0.0576*(1.0-smoothstep(24.0,96.0,distanceV));
+ slope+=filteredWaveSlope(x,vec2(-0.4,0.916515),2.03,-t*1.37,0.009,dx,dy);
 #endif
 #if WATER_QUALITY > 2
- slope+=d2*cos(dot(x,d2)*6.0+t*2.1)*0.03*(1.0-smoothstep(8.0,40.0,distanceV));
+ slope+=filteredWaveSlope(x,vec2(0.95,-0.31225),3.9,t*1.83,0.003,dx,dy);
 #endif
  float top=smoothstep(0.4,0.9,abs(n.y));
  return safeNormalize(n-vec3(slope.x,0.0,slope.y)*top*sign(n.y));

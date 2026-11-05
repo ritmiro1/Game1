@@ -98,3 +98,17 @@ Two major acceptance gaps remain: full previous mob/bone transforms are not part
 of this pack's common loader contract, and no voxel backend is supplied. A future
 backend must gather world geometry/emissive data and implement propagation; merely
 renaming the current gather is not a solution.
+
+
+## 1.3.1 screenshot-feedback follow-up — NOT RUN here
+- Record Iris/OptiFine exact version, GPU/driver and profile before comparing the
+  same tunnel shots. Check actual colortex0/3/6 RGBA16F, 9–12 R32F when enabled,
+  and negative history markers; no numeric-format warnings in loader logs.
+- Move away from an end rod slowly; stone detail should remain neutral/readable,
+  with no RGB threshold islands. Test CAVE_BRIGHTNESS 0/0.5/1/2, torch light and
+  pitch-black enclosed rooms separately. Cave fill is artistic, not physically real GI.
+- Repeat horizon/grazing-water views above/below the surface, stationary and moving,
+  at 720p/1080p/1440p and different FOV. Check disappearance of distant Moire,
+  preserved nearby ripples, world X/Z=0 and 4096 seams, and SSR off/linear/Hi-Z.
+- Check rod texture/bloom after resetting old settings (emission default changed).
+  A white emissive model is not itself a proof of an HDR failure.

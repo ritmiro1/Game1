@@ -1,4 +1,4 @@
-# AETHERIS 1.3.0 — experimental advanced screen-space rendering
+# AETHERIS 1.3.1 — experimental advanced screen-space rendering
 
 Original Minecraft shader pack, **not a mod/resource pack/datapack**.
 Intended targets: Iris/Fabric 1.21.4, then OptiFine 1.21.4, modern desktop OpenGL.
@@ -10,8 +10,19 @@ foliage, not mob/bone animation; colored lighting is visible-emitter screen spac
 NOT voxel light propagation; moving cloud fronts do NOT change Minecraft's actual
 regional rain/snow. See [precise Russian feature status](FEATURE_STATUS.ru.md).
 
+## Screenshot-feedback hotfix (1.3.1)
+Format enums are shipped as **GLSL const integers, not macros**. Iris scans their
+symbolic names after preprocessing; numeric macro expansion previously risked
+silently selecting default normalized buffers (dark RGB quantization / invalid
+HDR depth-history). The validator now checks real preprocessor output, not just
+GLSL compile success. This is a loader-contract regression test, not an Iris runtime.
+Water uses anisotropic pixel-footprint damping and warped periodic waves instead
+of unfiltered directional stripes. Cave light has a gentler transition; CAVE_BRIGHTNESS
+adds an explicitly artistic neutral floor, with 0 for darkness. Default emission is
+1.5 and vignette is off. User before/after confirmation remains pending.
+
 ## Install
-Place `Aetheris_v1.3.0.zip` unopened in `.minecraft/shaderpacks/`, remove the old
+Place `Aetheris_v1.3.1.zip` unopened in `.minecraft/shaderpacks/`, remove the old
 install ZIP, select the pack, RESET old settings and start MEDIUM. The install ZIP
 has `shaders/` at root. SOURCE ZIPs are not shader packs. Add features one at a time;
 TAA, LabPBR and POM remain opt-in. ULTRA is substantially more expensive than MEDIUM.

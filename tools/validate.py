@@ -162,6 +162,18 @@ def audit(root=SHADERS):
     return pairs
 
 
+def audit_preprocessed_formats(text):
+    """Iris 1.21.4 resolves symbolic format names AFTER GLSL macro expansion."""
+    formats=dict(re.findall(r'const\s+int\s+colortex(\d+)Format\s*=\s*(\w+)\s*;',text))
+    expected={str(i):('R32F' if 9<=i<=12 else ('RGBA8' if i in [7,15] else 'RGBA16F')) for i in range(16)}
+    if not all(str(i) in formats for i in range(7)):
+        raise ValueError('Missing required HDR format directives after preprocessing')
+    for index,value in formats.items():
+        if expected.get(index)!=value:
+            raise ValueError('Loader ignores or misreads colortex'+index+'Format='+value+'; preserve symbolic format names (no enum macros)')
+    return formats
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--compiler', required=True)
@@ -195,6 +207,13 @@ def main():
                     target = Path(directory) / (vertex.relative_to(root).with_suffix('').as_posix().replace('/', '__') + '.' + extension)
                     target.write_text(text)
                     inputs.append(str(target))
+                if vertex==root/'deferred.vsh':
+                    preprocessed=subprocess.run([args.compiler,'-E','-S','frag',inputs[1]],text=True,capture_output=True,timeout=30)
+                    try:
+                        if preprocessed.returncode:raise ValueError(preprocessed.stderr)
+                        report['pipeline_contracts'][profile]['loader_formats']=audit_preprocessed_formats(preprocessed.stdout)
+                    except ValueError as error:
+                        report['errors'].append({'profile':profile,'program':'deferred','log':str(error)})
                 result = subprocess.run([args.compiler, '-l', '-q', *inputs], text=True, capture_output=True, timeout=30)
                 sampler_count=len(re.findall(r'^.+: .*type 8b5e,',result.stdout,re.M))
                 report['max_active_sampler2D_uniforms']=max(report['max_active_sampler2D_uniforms'],sampler_count)

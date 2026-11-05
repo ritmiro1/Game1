@@ -1,17 +1,17 @@
 // OpenGL GL_RGBA16F: GLSL 1.20 does not define texture-format enum names.
-// Keep the symbolic const declarations below for Iris/OptiFine format scanning.
+// Use GLSL constants, NOT macros: Iris scans format names AFTER preprocessing.
 #ifndef RGBA16F
-#define RGBA16F 0x881A
+const int RGBA16F = 0x881A;
 #endif
 #ifndef RGBA8
-#define RGBA8 0x8058
+const int RGBA8 = 0x8058;
 #endif
 #include "/lib/common.glsl"
 #include "/lib/noise.glsl"
 #include "/lib/post.glsl"
 varying vec2 uv;
 #ifndef R32F
-#define R32F 0x822E
+const int R32F = 0x822E;
 #endif
 #ifdef AETHER_VELOCITY_ACTIVE
 const int colortex8Format = RGBA16F;

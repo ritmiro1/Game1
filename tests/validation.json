@@ -1,7 +1,7 @@
 {
   "type": "static GLSL compile/link and contract audit (not Minecraft runtime)",
   "compiler": "Glslang Version: 10:11.7.0",
-  "source_sha256": "6dd4e58db78c993a9508dfc5ac563e1b56dc009e59e0a94d29c345d5e9d8d78e",
+  "source_sha256": "6a532f7887a02d1545bdc0b5cca0f1f596d6a0b45bffdc74f09e5dfa791edc3e",
   "compiler_macros_injected": false,
   "max_active_sampler2D_uniforms": 12,
   "program_pairs": 90,
@@ -56,6 +56,15 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "MEDIUM": {
@@ -81,6 +90,15 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "HIGH": {
@@ -110,6 +128,19 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "ULTRA": {
@@ -144,6 +175,23 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "DEFAULT": {
@@ -169,6 +217,15 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "HIGH_CAMERA": {
@@ -198,6 +255,20 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "NEUTRAL_DISABLED": {
@@ -223,6 +294,15 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "TEMPORAL_HIGH": {
@@ -253,6 +333,20 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "TEMPORAL_CAMERA": {
@@ -283,6 +377,20 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "EXTREMES": {
@@ -318,6 +426,23 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "LABPBR": {
@@ -347,6 +472,20 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "LABPBR_POM": {
@@ -376,6 +515,20 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "ALL_FEATURES": {
@@ -408,6 +561,21 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "FAST_DISABLED": {
@@ -431,6 +599,15 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "VOLUME_QUARTER": {
@@ -465,6 +642,23 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "MOTION_HIZ_GI": {
@@ -498,6 +692,23 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "COLORED_PUDDLES": {
@@ -530,6 +741,23 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     },
     "NINE_DIRECTIONS": {
@@ -565,6 +793,24 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "GI_NO_HISTORY": {
@@ -596,6 +842,22 @@
           "composite1",
           "composite2"
         ]
+      },
+      "loader_formats": {
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F"
       }
     }
   },

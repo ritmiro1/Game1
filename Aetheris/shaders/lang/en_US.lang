@@ -97,3 +97,6 @@ option.drynessHalflife=Wet-surface drying half-life (seconds)
 option.CLOUD_LAYERS=Volume cloud layers
 option.WEATHER_FRONTS=Visual moving cloud fronts
 option.FRONT_STRENGTH=Cloud front coverage variation
+
+option.CAVE_BRIGHTNESS=Cave readability
+option.CAVE_BRIGHTNESS.comment=Neutral artistic ambient floor in enclosed areas. 0 restores darkness; not physical GI.

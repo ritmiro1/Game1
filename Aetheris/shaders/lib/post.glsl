@@ -1,6 +1,6 @@
 #ifndef AETHERIS_POST
 #define AETHERIS_POST
-vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}
+vec3 aces(vec3 x){x=max(x,vec3(0.0));return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}
 vec3 bright(vec3 c){float l=max(c.r,max(c.g,c.b));return c*max(l-BLOOM_THRESHOLD,0.0)/max(l,0.0001);}
 float aoAt(vec2 uv,vec3 p,vec3 n){
  if(AO_STRENGTH<=0.0 || -p.z>=AO_DISTANCE)return 1.0;

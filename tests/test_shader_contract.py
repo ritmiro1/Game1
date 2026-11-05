@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from validate import SHADERS, apply_options, audit, expand, source_digest, resolve_properties
+from validate import SHADERS, apply_options, audit, expand, source_digest, resolve_properties, audit_preprocessed_formats
 from package import require_validation
 
 
@@ -125,7 +125,7 @@ class ShaderContractTests(unittest.TestCase):
 
     def test_format_enum_shipped_not_injected(self):
         text = expand(SHADERS / 'deferred.fsh')
-        self.assertIn('#define RGBA16F 0x881A', text)
+        self.assertIn('const int RGBA16F = 0x881A;', text)
         self.assertEqual(apply_options(text, {}), text)
         self.assertIn('const int colortex6Format = RGBA16F;', text)
         self.assertIn('const bool colortex6Clear = false;', text)
@@ -258,6 +258,27 @@ class NumericTests(unittest.TestCase):
             self.assertTrue(0.0<trans<=1.0)
         self.assertAlmostEqual(math.exp(-(1.0-1.0)*3),1.0)
 
+    def test_water_footprint_filter_is_bounded_and_removes_subpixel_waves(self):
+        weights=[math.exp(-0.5*f*f) for f in [0,.25,1,2,4,8]]
+        self.assertEqual(weights[0],1)
+        self.assertTrue(all(0<=w<=1 for w in weights))
+        self.assertEqual(weights,sorted(weights,reverse=True))
+        self.assertLess(weights[-1],1e-12)
+        water=(SHADERS/'lib/water.glsl').read_text()
+        self.assertIn('dot(gradient,dx)',water);self.assertIn('dot(gradient,dy)',water)
+        self.assertNotIn('dFdx(',water) # library is also legal in vertex stages
+
+    def test_water_wavevectors_are_continuous_across_world_wrap(self):
+        for k in [.8*1.12,-.4*2.03,.95*3.9]:
+            q=math.floor(k*4096/(2*math.pi)+.5)*2*math.pi/4096
+            self.assertAlmostEqual(math.sin(q*13.27),math.sin(q*(13.27+4096)),places=10)
+
+    def test_cave_readability_has_zero_option_and_gentler_light_falloff(self):
+        lighting=(SHADERS/'lib/lighting.glsl').read_text()
+        self.assertIn('*CAVE_BRIGHTNESS*(1.0-sky)',lighting)
+        self.assertIn('1.65)',lighting)
+        self.assertGreater(.25**1.65,.25**3*4)
+
     def test_ycocg_roundtrip(self):
         for r, g, b in [(0, 0, 0), (0.1, 0.2, 0.3), (12, 0.1, 4), (1, 1, 1)]:
             y, co, cg = (r + 2*g + b)/4, (r-b)/2, (-r+2*g-b)/4
@@ -287,6 +308,23 @@ class CompilerRegressionTests(unittest.TestCase):
             return subprocess.run([COMPILER, '-S', 'frag', str(path)],
                                   text=True, capture_output=True, timeout=30)
 
+    def preprocess(self,text):
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'formats.frag';path.write_text(text)
+            result=subprocess.run([COMPILER,'-E','-S','frag',str(path)],text=True,capture_output=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stderr)
+            return result.stdout
+
+    def test_formats_survive_real_preprocessor_as_loader_symbols(self):
+        source=apply_options(expand(SHADERS/'deferred.fsh'),{'HIZ_SSR':'1','SSGI':'1','LAB_PBR':'1'})
+        formats=audit_preprocessed_formats(self.preprocess(source))
+        self.assertEqual(formats['0'],'RGBA16F');self.assertEqual(formats['9'],'R32F')
+        self.assertEqual(formats['15'],'RGBA8')
+        # Original bug compiles successfully, but Iris cannot parse numeric format names.
+        broken=source.replace('const int RGBA16F = 0x881A;','#define RGBA16F 0x881A')
+        self.assertEqual(self.compile_fragment(broken).returncode,0)
+        with self.assertRaises(ValueError):audit_preprocessed_formats(self.preprocess(broken))
+
     def test_labpbr_gradient_extension_fallback(self):
         text = apply_options(expand(SHADERS / 'gbuffers_terrain.fsh'), {'LAB_PBR': '1', 'POM': '1'})
         for source in [text, text.replace('GL_ARB_shader_texture_lod', 'AETHER_UNAVAILABLE_EXTENSION')]:
@@ -297,7 +335,7 @@ class CompilerRegressionTests(unittest.TestCase):
         text = expand(SHADERS / 'deferred.fsh')
         fixed = self.compile_fragment(text)
         self.assertEqual(fixed.returncode, 0, fixed.stdout + fixed.stderr)
-        broken = self.compile_fragment(text.replace('#define RGBA16F 0x881A', ''))
+        broken = self.compile_fragment(text.replace('const int RGBA16F = 0x881A;', ''))
         self.assertNotEqual(broken.returncode, 0)
         self.assertIn('RGBA16F', broken.stdout + broken.stderr)
 

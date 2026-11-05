@@ -34,9 +34,11 @@ vec3 shadeSurface(vec3 albedo,vec3 n,vec3 geometricN,vec3 vp,vec2 lm,float rough
  ambient+=vec3(0.025,0.018,0.010)*dayAmount()*sky*(1.0-saturate(wn.y));
  // Vanilla propagated block light provides local illumination; not dynamic colored point lights.
  float held=float(max(heldBlockLightValue,heldBlockLightValue2))/15.0;
- float torch=max(pow(saturate(lm.x),3.0),held*pow(saturate(1.0-length(vp)/12.0),2.0));
- vec3 block=vec3(1.0,0.56,0.23)*torch*0.9;
- vec3 c=direct+albedo*((ambient+dimensionAmbient)*ambientAO+block+0.0025)+albedo*emissive*EMISSIVE_BRIGHTNESS;
+ float torch=max(pow(saturate((lm.x-0.03125)/0.9375),1.65),held*pow(saturate(1.0-length(vp)/12.0),2.0));
+ vec3 block=vec3(1.0,0.68,0.40)*torch*0.9;
+ // Deliberate artistic readability floor, NOT bounced/voxel light. Zero restores darkness.
+ vec3 caveFill=vec3(0.014,0.015,0.017)*CAVE_BRIGHTNESS*(1.0-sky);
+ vec3 c=direct+albedo*((ambient+dimensionAmbient+caveFill)*ambientAO+block)+albedo*emissive*EMISSIVE_BRIGHTNESS;
  return aerialFog(c,vp);
 }
 #endif

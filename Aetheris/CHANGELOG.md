@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.1 — 2026-11-05, screenshot-feedback hotfix
+
+- Fix a real Iris loader contract bug: enum macros expanded RGBA16F/RGBA8/R32F
+  into numeric format strings before Iris parsed them. Use GLSL const definitions
+  so the driver compiles AND the loader retains symbolic format names. This can
+  restore actual HDR precision/depth/history instead of default normalized buffers.
+- Validate format directives AFTER a real GLSL preprocessor, including a regression
+  proving the previous broken version compiled successfully but lost loader formats.
+- Water slopes use Gaussian pixel-footprint filtering, multiple warped directions
+  and periodic Fourier vectors; suppress distant wave aliasing without blurring scene
+  textures. Caller derivatives are computed before fragment discard/divergence.
+- Gentler block-light curve, less orange tint, adjustable neutral artistic cave fill
+  (CAVE_BRIGHTNESS=0 restores darkness). Default emission 1.5; vignette defaults off.
+- Screenshot feedback is diagnostic input, not proof of a fix in Minecraft. No
+  before/after GPU run is available here; real loader/profile confirmation is needed.
+
+
 ## 1.3.0 — 2026-11-05, experimental
 
 - Analytic foliage motion buffer consumed by TAA/blur; reject unknown entity history.

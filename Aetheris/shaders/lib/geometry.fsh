@@ -46,6 +46,8 @@ varying vec4 tileBounds;
 #endif
 #endif
 void main(){
+ // Unconditional quad derivatives: safe before divergent water/front-face branches.
+ vec2 waterDx=dFdx(positionW.xz),waterDy=dFdy(positionW.xz);
  vec3 geometricN=safeNormalize(normalV);vec2 sampleUV=uv;
 #if LAB_PBR == 1 && !defined(WEATHER_PASS) && !defined(WATER_PASS)
  // Derivatives are evaluated before texture alpha discard and before ray-march divergence.
@@ -82,7 +84,7 @@ void main(){
  if(water>0.5){
   if(!gl_FrontFacing)n=-n;
   vec3 wn=safeNormalize(mat3(gbufferModelViewInverse)*n);
-  n=safeNormalize(mat3(gbufferModelView)*waveNormal(positionW,wn,length(positionV)));
+  n=safeNormalize(mat3(gbufferModelView)*waveNormal(positionW,wn,waterDx,waterDy));
   rough=0.12;f0=vec3(0.02037);albedo=mix(albedo,vec3(0.025,0.12,0.14),0.8);tex.a=0.82;
  }
 #endif
