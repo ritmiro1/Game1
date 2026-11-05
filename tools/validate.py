@@ -115,6 +115,9 @@ def variants(root=SHADERS):
                                   'COLORED_LIGHTS': '1', 'COLORED_SHADOWS': '1', 'PUDDLES': '1',
                                   'CAUSTICS': '1', 'FOAM': '1', 'CLOUD_LAYERS': '2', 'WEATHER_FRONTS': '1'}
     profiles['GI_NO_HISTORY'] = {**profiles['COLORED_PUDDLES'], 'SSGI': '1', 'GI_TEMPORAL': '0', 'MOTION_VECTORS': '0'}
+    profiles['LEGACY_CLOUDS']={**profiles['MEDIUM'],'CLOUD_MODE':'1'}
+    profiles['WEATHER_MIN']={**profiles['LOW'],'RAIN_OPACITY':'0.15','WEATHER_HAZE':'0.0','BLOCK_LIGHT_WARMTH':'0.0'}
+    profiles['WEATHER_MAX']={**profiles['ULTRA'],'RAIN_OPACITY':'0.7','WEATHER_HAZE':'1.5','BLOCK_LIGHT_WARMTH':'1.0','BLOCK_LIGHT_STRENGTH':'1.1'}
     return profiles
 
 

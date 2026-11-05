@@ -144,8 +144,77 @@ class ShaderContractTests(unittest.TestCase):
         self.assertIn('reflectionSource=reflectionSky(ray)',deferred)
         self.assertIn('gl_FragData[0]=vec4(c,1)',deferred) # actual visible sky unchanged
         gi=(SHADERS/'program/deferred7.fsh').read_text()
-        self.assertIn('if(depth>=0.99999)reflectionSource=texture2D(colortex3,uv).rgb;',gi)
-        self.assertIn('gl_FragData[1]=vec4(reflectionSource,1)',gi)
+        self.assertIn('if(depth>=0.99999 || savedSource.a<=0.0)reflectionSource=savedSource.rgb;',gi)
+        self.assertIn('gl_FragData[1]=vec4(reflectionSource,savedSource.a)',gi)
+
+    def test_ssr_source_depth_and_hand_holes_survive_gi(self):
+        source=(SHADERS/'program/deferred.fsh').read_text()
+        self.assertIn('marker> -1.5 && marker< -0.5',source)
+        self.assertIn('else reflectionSource=vec3(0.0)',source)
+        self.assertIn('vec4(reflectionSource,sourceDepth)',source)
+        gi=(SHADERS/'program/deferred7.fsh').read_text()
+        self.assertIn('vec4(reflectionSource,savedSource.a)',gi)
+        ssr=(SHADERS/'lib/reflections.glsl').read_text()
+        self.assertNotIn('texture2D(depthtex1',ssr)
+        self.assertIn('sourceDepth=reflectionTexel(t).a',ssr)
+        self.assertIn('residual<tolerance',ssr)
+        self.assertIn('value.a>0.0',ssr)
+        self.assertIn('floor(uv*size)',ssr) # never interpolate categorical validity/depth
+
+    def test_weather_only_writes_color_and_never_depth_or_material(self):
+        weather=expand(SHADERS/'gbuffers_weather.fsh')
+        self.assertIn('/* DRAWBUFFERS:0 */',weather)
+        self.assertNotIn('gl_FragData[1]',weather)
+        self.assertNotIn('gl_FragData[2]',weather)
+        self.assertIn('luminance',weather)
+        self.assertIn('RAIN_OPACITY',weather)
+        self.assertEqual(resolve_properties({})['rain.depth'],'false')
+
+    def test_sheet_cloud_profiles_disable_vanilla_and_volume_passes(self):
+        from validate import variants
+        for name in ['LOW','MEDIUM','HIGH']:
+            options=variants()[name]
+            self.assertEqual(options['CLOUD_MODE'],'3')
+            props=resolve_properties(options)
+            self.assertEqual(props['clouds'],'off')
+            self.assertEqual(props['program.composite1.enabled'],'false')
+        self.assertIn('return sheetCloudSky(c,ray)',(SHADERS/'lib/sky.glsl').read_text())
+        self.assertIn('upperSheetOptical', (SHADERS/'lib/clouds.glsl').read_text())
+
+    def test_weather_hides_celestials_and_gates_haze_to_outdoors(self):
+        common=(SHADERS/'lib/common.glsl').read_text()
+        self.assertIn('pow(1.0-weatherAmount(),4.0)',common)
+        sky=(SHADERS/'lib/sky.glsl').read_text()
+        self.assertIn('*day*celestial',sky)
+        self.assertIn('*lit*(1.0-day)*celestial',sky)
+        self.assertIn('(1.0-day)*celestial*smoothstep',sky)
+        fog=(SHADERS/'lib/fog.glsl').read_text()
+        self.assertIn('outdoorAccess(skyLight)*outdoorAccess(float(eyeBrightnessSmooth.y)/240.0)',fog)
+
+    def test_material_f0_is_available_without_labpbr_and_glass_is_not_water(self):
+        geom=(SHADERS/'lib/geometry.fsh').read_text()
+        self.assertIn('material==10021.0',geom)
+        self.assertIn('material==10022.0',geom)
+        self.assertIn('water+glass*2.0',geom)
+        self.assertIn('gl_FragData[3]=vec4(clamp(f0',geom)
+        composite=(SHADERS/'program/composite.fsh').read_text()
+        self.assertIn('bool water=material.g>0.5 && material.g<1.5',composite)
+        self.assertNotIn('vec3(0.65)',composite)
+        self.assertIn('surfaceF0=texture2D(colortex7,uv)',composite)
+        self.assertEqual(resolve_properties({'LAB_PBR':'0'})['blend.gbuffers_water.colortex7'],'off')
+
+    def test_weather_and_tonemap_reference_bounds(self):
+        weights=[(1-r)**4 for r in [0,.25,.5,.75,1]]
+        self.assertEqual(weights[0],1);self.assertEqual(weights[-1],0)
+        self.assertEqual(weights,sorted(weights,reverse=True))
+        # Sealed receiver or sealed eye suppresses the storm component independently.
+        for eye,surface in [(0,0),(0,1),(1,0)]:self.assertEqual(eye*surface,0)
+        def aces(x):return max(0,min(1,x*(2.51*x+.03)/(x*(2.43*x+.59)+.14)))
+        for rgb in [(0,0,0),(.001,.002,.003),(1,.5,.02),(40,10,1),(1000,1000,1000)]:
+            l=sum(x*w for x,w in zip(rgb,[.2126,.7152,.0722]))
+            chroma=[x*aces(l)/max(l,.000001) for x in rgb]
+            peak=max(1,max(chroma));mapped=[.65*aces(x)+.35*c/peak for x,c in zip(rgb,chroma)]
+            self.assertTrue(all(math.isfinite(x) and 0<=x<=1 for x in mapped))
 
     def test_water_still_composited_without_ssr(self):
         text = (SHADERS / 'program/composite.fsh').read_text()

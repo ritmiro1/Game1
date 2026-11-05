@@ -100,3 +100,13 @@ option.FRONT_STRENGTH=Cloud front coverage variation
 
 option.CAVE_BRIGHTNESS=Cave readability
 option.CAVE_BRIGHTNESS.comment=Neutral artistic ambient floor in enclosed areas. 0 restores darkness; not physical GI.
+
+option.RAIN_OPACITY=Precipitation opacity
+option.RAIN_OPACITY.comment=Neutral alpha-blended rain/snow; does not write material buffers or depth.
+option.WEATHER_HAZE=Outdoor weather haze
+option.WEATHER_HAZE.comment=Rain haze gated by eye and surface skylight; not a world-volume weather simulation.
+option.BLOCK_LIGHT_WARMTH=Block light warmth
+option.BLOCK_LIGHT_WARMTH.comment=Global propagated-light tint. The lightmap cannot identify each installed source.
+option.BLOCK_LIGHT_STRENGTH=Block light intensity
+value.CLOUD_MODE.3=Soft layered sheet (balanced)
+option.CLOUD_MODE.comment=0 off, 1 legacy Minecraft, 2 volume, 3 world-anchored 2.5D sheet.

@@ -1,4 +1,4 @@
-# Aetheris 1.3.2 — advanced shader iteration
+# Aetheris 1.4.0 — advanced shader iteration
 
 Original shader pack intended for Minecraft Java 1.21.4 / Iris (primary) and
 OptiFine (secondary). **Experimental: no in-game/GPU/FPS certification.**
@@ -10,6 +10,13 @@ colored lighting, tinted glass shadows, procedural caustics/shore foam, two clou
 layers/visual fronts, puddles and dimension-specific art direction. **Full mob
 motion vectors and voxel light propagation are NOT implemented.** Cloud fronts do
 not alter actual regional rain/snow. These are not labelled complete substitutes.
+
+## 1.4.0 weather/material pass
+Adds soft sheet cloud defaults, overcast/celestial weather response, neutral
+color-only rain/snow, outdoor-access haze, snapshot-depth SSR/hand rejection,
+always-on RGB material F0, glass interface tagging and more restrained bloom /
+block-light controls. [Paired comparison checklist](Aetheris/COMPARISON_TESTS.ru.md).
+No local GPU visual/FPS acceptance; no per-source world/voxel light backend.
 
 ## 1.3.2 star-reflection hotfix
 Separate direct sky stars from a star-free reflection environment; clean sky-depth
@@ -28,7 +35,7 @@ for the next art-direction pass; this does not claim parity with leading packs.
 ## Sources / generated entry points
 Canonical stage bodies: `Aetheris/shaders/program/`. Shared code: `shaders/lib/`.
 Root/world-1/world1 wrappers are generated; never hand-edit them. Thirty base pairs
-× three dimensions × nineteen configurations = 1710 static pair checks per tree.
+× three dimensions × twenty-two configurations = 1980 static pair checks per tree.
 All advanced color buffers are described in ARCHITECTURE.md. Modern 1.21.4 loaders
 must support RENDERTARGETS attachment remapping up to colortex15; GPU tests remain open.
 
@@ -54,7 +61,7 @@ reflection against a 16-sampler budget. Conditional-property auditing covers onl
 the subset used here; it is not an Iris/OptiFine emulator. Packaging refuses stale
 shader reports or wrapper drift. Analytic operation/memory counts are NOT GPU timing.
 
-Install only `Aetheris_v1.3.2.zip` unopened in `.minecraft/shaderpacks/`, RESET old
+Install only `Aetheris_v1.4.0.zip` unopened in `.minecraft/shaderpacks/`, RESET old
 settings, start MEDIUM; enable expensive modes one at a time. Source ZIP is not a
 pack. Small ZIPs are tracked in downloads/ because the sandbox blocks release-asset
-uploads. Releases use `aetheris-v1.3.2`; unrelated existing tags are not overwritten.
+uploads. Releases use `aetheris-v1.4.0`; unrelated existing tags are not overwritten.

@@ -73,6 +73,17 @@ float dayAmount(){
  return smoothstep(-0.10,0.14,solarHeight());
 #endif
 }
+// Global weather proxies, not regional precipitation simulation.
+float weatherAmount(){
+#if defined(AETHER_NETHER) || defined(AETHER_END)
+ return 0.0;
+#else
+ return smoothstep(0.0,1.0,saturate(rainStrength));
+#endif
+}
+float celestialVisibility(){return pow(1.0-weatherAmount(),4.0);}
+vec3 overcastRadiance(){return mix(vec3(0.012,0.018,0.028)*NIGHT_BRIGHTNESS,vec3(0.13,0.155,0.18),dayAmount());}
+float outdoorAccess(float skyLight){return smoothstep(0.04,0.45,skyLight);}
 vec3 primaryLightDirectionV(){
 #ifdef AETHER_END
  return safeNormalize(mat3(gbufferModelView)*vec3(0.3,0.8,-0.4));
@@ -89,7 +100,7 @@ vec3 lightColor(){
 #else
  float h=solarHeight();float sunPower=smoothstep(-0.04,0.07,h);
  float moonPower=(1.0-smoothstep(-0.14,0.02,h))*(0.25+0.75*(0.5+0.5*cos(float(moonPhase)*PI/4.0)));
- return (sunlight()*sunPower+vec3(0.055,0.082,0.145)*moonPower*NIGHT_BRIGHTNESS)*(1.0-0.78*rainStrength);
+ return (sunlight()*sunPower+vec3(0.055,0.082,0.145)*moonPower*NIGHT_BRIGHTNESS)*mix(1.0,0.08,weatherAmount());
 #endif
 }
 // Eye-brightness exposure proxy, smoothed by the loader, not scene-luminance metering.
@@ -102,8 +113,8 @@ float adaptedExposure(){
 #if AUTO_EXPOSURE == 1
  float sky=pow(saturate(float(eyeBrightnessSmooth.y)/240.0),2.0);
  float block=pow(saturate(float(eyeBrightnessSmooth.x)/240.0),3.0);
- float level=sky*mix(0.035,0.42,dayAmount())+block*0.16;
- return EXPOSURE*clamp(0.20/(0.055+level),0.65,2.6);
+ float level=sky*mix(0.035,0.42,dayAmount())+block*0.20;
+ return EXPOSURE*clamp(0.20/(0.055+level),0.65,2.3);
 #else
  return EXPOSURE;
 #endif

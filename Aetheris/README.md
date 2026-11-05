@@ -1,4 +1,4 @@
-# AETHERIS 1.3.2 — experimental advanced screen-space rendering
+# AETHERIS 1.4.0 — experimental advanced screen-space rendering
 
 Original Minecraft shader pack, **not a mod/resource pack/datapack**.
 Intended targets: Iris/Fabric 1.21.4, then OptiFine 1.21.4, modern desktop OpenGL.
@@ -9,6 +9,34 @@ GLSL 1.20 syntax with an optional guarded texture-gradient extension for LabPBR/
 foliage, not mob/bone animation; colored lighting is visible-emitter screen space,
 NOT voxel light propagation; moving cloud fronts do NOT change Minecraft's actual
 regional rain/snow. See [precise Russian feature status](FEATURE_STATUS.ru.md).
+
+## 1.4.0: weather/material pass
+**New defaults require reset + profile selection.** LOW/MEDIUM/HIGH use cloud mode
+3 (soft world-anchored 2.5D sheet; MEDIUM/HIGH add upper wisps). ULTRA keeps volume
+mode 2. Legacy Minecraft clouds remain mode 1 for compatibility, not the new default.
+Heavy rain fades celestial points/discs, closes cloud coverage and produces muted
+blue-gray sky/diffuse lighting. Rain/snow are neutral alpha-blended color only,
+with depth writing disabled. Outdoor haze requires eye AND receiver sky access;
+this is a proxy, so outdoor views through fully dark interiors can lack some haze.
+
+SSR now uses the opaque HDR snapshot's own depth/validity in colortex3 alpha, not
+later translucent depth, with invalid hand holes and depth-compatible filter taps.
+Missing data behind a hand falls back to the environment; it is not reconstructed.
+RGB F0/AO in colortex7 is now ALWAYS required (one extra logical full-size RGBA8
+image without LabPBR versus 1.3.x). Iron/gold/copper and diamond have distinct base
+properties; LabPBR maps still override them. Glass uses its own interface marker,
+not the water path; camera-side glass remains a thin alpha-tinted approximation,
+not multi-layer refractive ray tracing or locally colored light transmission.
+
+Block-light warmth/intensity are global lightmap controls, NOT a claim that a
+placed end rod's light is distinguishable from a placed torch outside screen-space
+source data. Neutral/cool emitter SURFACES have gentler emission; source-specific
+world propagation remains open. Bloom defaults lower; hue-aware filmic mix and
+exposure ceiling help highlights. Wet roughness respects porosity and puddles
+exclude metal/glass. New controls have en_US + partial ru_RU labels.
+
+The user reports prior builds load in both Iris/OptiFine; THIS version has no local
+GPU visual/performance acceptance. Use COMPARISON_TESTS.ru.md for paired captures.
 
 ## 1.3.2: stable star-free reflection environment
 Direct sky rendering retains point stars. Water/material reflections deliberately
@@ -32,7 +60,7 @@ adds an explicitly artistic neutral floor, with 0 for darkness. Default emission
 1.5 and vignette is off. User before/after confirmation remains pending.
 
 ## Install
-Place `Aetheris_v1.3.2.zip` unopened in `.minecraft/shaderpacks/`, remove the old
+Place `Aetheris_v1.4.0.zip` unopened in `.minecraft/shaderpacks/`, remove the old
 install ZIP, select the pack, RESET old settings and start MEDIUM. The install ZIP
 has `shaders/` at root. SOURCE ZIPs are not shader packs. Add features one at a time;
 TAA, LabPBR and POM remain opt-in. ULTRA is substantially more expensive than MEDIUM.
@@ -72,8 +100,8 @@ TAA, LabPBR and POM remain opt-in. ULTRA is substantially more expensive than ME
 ## Profiles
 | Profile | Additional advanced features |
 |---|---|
-| LOW | Advanced features off, quarter effects, no SSR/shafts |
-| MEDIUM | Puddles and shoreline foam; no SSGI/colored gather/Hi-Z |
+| LOW | Soft sheet clouds, advanced features off, quarter effects, no SSR/shafts |
+| MEDIUM | Two sheet layers, puddles/foam; no SSGI/colored gather/Hi-Z |
 | HIGH | Hi-Z SSR, glass transmission, caustics, puddles, foam |
 | ULTRA | HIGH plus SSGI/visible-source colored light, two cloud layers/visual fronts |
 
@@ -94,7 +122,7 @@ _n RG: normal XY; B: ambient AO; A: height. _s R: smoothness; G: dielectric F0 o
 conductor IDs; B: porosity/subsurface; A: emission 0–254, **255 reserved/no emission**.
 RGB conductor F0/Schlick and subsurface are approximations, not complete complex-IOR
 Fresnel/diffusion. Neutral missing spec maps keep material-ID defaults; detection is
-heuristic. Optional RGBA8 F0 is retained for reflections. Derivative tangent frames.
+heuristic. RGBA8 RGB F0 is always retained for reflections, including fallback material IDs. Derivative tangent frames.
 POM is terrain-only, distance/step-limited, atlas-clamped with half-texel inset;
 foliage excluded. Height extrema are treated as flat/missing initial data. No depth
 writes, silhouette displacement or POM self-shadows. Optional texture gradients
@@ -102,7 +130,7 @@ preserve original mip footprint; the fallback may be less stable. Both need runt
 
 ## Validation and cost
 30 base program pairs with generated Overworld/Nether/End entries: 90 entry pairs.
-19 configurations cover feature combinations, totaling 1710 pair compile/link
+22 configurations cover feature combinations, totaling 1980 pair compile/link
 checks per source tree, repeated on the extracted ZIP. CPU/static/negative compiler
 regressions and sampler-budget reflection are included. Packaging binds the ZIP to
 the tested source hash and checks generated wrappers. This does NOT emulate loader

@@ -126,3 +126,10 @@ renaming the current gather is not a solution.
   loader families. This removes unresolved point stars rather than physically
   preintegrating their tiny reflected energy; no claim of full reflection antialiasing.
 - Remaining submitted images are REFERENCES, not evidence of bugs in this build.
+
+## 1.4.0 specific acceptance
+See COMPARISON_TESTS.ru.md for fixed-camera wet village / metal / glass / emitter
+comparisons. The user reports both loaders work with previous builds; this is not
+a pass for THIS version. Cloud mode 3 is a ground-scene 2.5D approximation, not a
+fly-through cloud volume; use mode 2 to evaluate flying through clouds. Check rain
+against metal materials, TAA on/off, dark rooms, and sky at rainStrength approaching 1.

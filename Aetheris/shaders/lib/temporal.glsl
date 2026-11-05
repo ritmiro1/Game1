@@ -42,6 +42,8 @@ vec3 resolveTemporal(vec2 uv,vec3 current,float depth,out float historyDepth){
  vec3 bounded=clamp(toYCoCg(history.rgb),lo,hi);
  float motion=length((previousUV-uv)*vec2(viewWidth,viewHeight));
  float weight=TAA_HISTORY*exp(-motion*0.04);
+ // Weather is a moving blended layer without its own velocity/depth.
+ weight*=mix(1.0,0.55,weatherAmount()*outdoorAccess(float(eyeBrightnessSmooth.y)/240.0));
  vec3 result=mix(current,max(fromYCoCg(bounded),vec3(0.0)),weight);
  return result;
 #else

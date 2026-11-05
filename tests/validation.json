@@ -1,7 +1,7 @@
 {
   "type": "static GLSL compile/link and contract audit (not Minecraft runtime)",
   "compiler": "Glslang Version: 10:11.7.0",
-  "source_sha256": "1faec4c0539d62a40466afe4ea6199cf030843575d26dc24fd5692f8a3d9b9e0",
+  "source_sha256": "510c9d42ea4028fb2e50577a6139778612daa2c21fb982c18c9058ac3f965ac5",
   "compiler_macros_injected": false,
   "max_active_sampler2D_uniforms": 12,
   "program_pairs": 90,
@@ -30,7 +30,10 @@
     "MOTION_HIZ_GI": 90,
     "COLORED_PUDDLES": 90,
     "NINE_DIRECTIONS": 90,
-    "GI_NO_HISTORY": 90
+    "GI_NO_HISTORY": 90,
+    "LEGACY_CLOUDS": 90,
+    "WEATHER_MIN": 90,
+    "WEATHER_MAX": 90
   },
   "pipeline_contracts": {
     "LOW": {
@@ -41,7 +44,7 @@
       ],
       "buffer4_scale": "0.25 0.25",
       "buffer5_scale": "0.25 0.25",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred"
       ],
@@ -64,7 +67,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "MEDIUM": {
@@ -75,7 +79,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred"
       ],
@@ -98,7 +102,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "HIGH": {
@@ -109,7 +114,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -140,7 +145,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "ULTRA": {
@@ -191,7 +197,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "DEFAULT": {
@@ -202,7 +209,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred"
       ],
@@ -225,7 +232,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "HIGH_CAMERA": {
@@ -236,7 +244,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -268,7 +276,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "NEUTRAL_DISABLED": {
@@ -302,7 +311,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "TEMPORAL_HIGH": {
@@ -314,7 +324,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -346,7 +356,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "TEMPORAL_CAMERA": {
@@ -358,7 +369,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -390,7 +401,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "EXTREMES": {
@@ -442,7 +454,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "LABPBR": {
@@ -453,7 +466,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -496,7 +509,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -607,7 +620,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "VOLUME_QUARTER": {
@@ -658,7 +672,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "MOTION_HIZ_GI": {
@@ -670,7 +685,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -708,7 +723,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "COLORED_PUDDLES": {
@@ -719,7 +735,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -757,7 +773,8 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     },
     "NINE_DIRECTIONS": {
@@ -821,7 +838,7 @@
       ],
       "buffer4_scale": "0.5 0.5",
       "buffer5_scale": "0.5 0.5",
-      "vanilla_clouds": "fancy",
+      "vanilla_clouds": "off",
       "enabled_deferred_programs": [
         "deferred",
         "deferred1",
@@ -857,7 +874,130 @@
         "3": "RGBA16F",
         "4": "RGBA16F",
         "5": "RGBA16F",
-        "6": "RGBA16F"
+        "6": "RGBA16F",
+        "7": "RGBA8"
+      }
+    },
+    "LEGACY_CLOUDS": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "fancy",
+      "enabled_deferred_programs": [
+        "deferred"
+      ],
+      "dimension_suppression": {
+        "world-1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ],
+        "world1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
+      }
+    },
+    "WEATHER_MIN": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.25 0.25",
+      "buffer5_scale": "0.25 0.25",
+      "vanilla_clouds": "off",
+      "enabled_deferred_programs": [
+        "deferred"
+      ],
+      "dimension_suppression": {
+        "world-1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ],
+        "world1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ]
+      },
+      "loader_formats": {
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
+      }
+    },
+    "WEATHER_MAX": {
+      "enabled_composite_programs": [
+        "composite",
+        "composite1",
+        "composite2",
+        "composite4",
+        "composite5"
+      ],
+      "buffer4_scale": "0.5 0.5",
+      "buffer5_scale": "0.5 0.5",
+      "vanilla_clouds": "off",
+      "enabled_deferred_programs": [
+        "deferred",
+        "deferred1",
+        "deferred2",
+        "deferred3",
+        "deferred4",
+        "deferred5",
+        "deferred6",
+        "deferred7"
+      ],
+      "dimension_suppression": {
+        "world-1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ],
+        "world1": [
+          "shadow",
+          "composite1",
+          "composite2"
+        ]
+      },
+      "loader_formats": {
+        "8": "RGBA16F",
+        "9": "R32F",
+        "10": "R32F",
+        "11": "R32F",
+        "12": "R32F",
+        "13": "RGBA16F",
+        "14": "RGBA16F",
+        "15": "RGBA8",
+        "0": "RGBA16F",
+        "1": "RGBA16F",
+        "2": "RGBA16F",
+        "3": "RGBA16F",
+        "4": "RGBA16F",
+        "5": "RGBA16F",
+        "6": "RGBA16F",
+        "7": "RGBA8"
       }
     }
   },

@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.4.0 — 2026-11-05, weather/material art-direction pass
+
+- Opaque source alpha now stores matching linear depth; zero marks sky/hand holes.
+  SSR validates/refines against this snapshot, rejects held-item pixels, uses point
+  metadata reads and depth-compatible roughness taps. GI preserves source validity.
+- Always write RGBA8 RGB F0/AO, including non-LabPBR fallback materials. Separate
+  iron/gold/copper/diamond IDs, distinct roughness/F0, thin glass interface marker.
+  Glass is no longer confused with water; hands do not receive screen reflections.
+- CLOUD_MODE=3: world-anchored 2.5D optical cloud sheet with optional upper wisps,
+  quality-scaled noise, weather coverage/lighting, no vanilla cloud geometry or
+  volume raster passes. LOW/MEDIUM/HIGH use it; ULTRA keeps volume mode 2.
+- Rain suppresses celestial points/discs, drives gray-blue overcast sky, diffuse
+  ambient and cloud cover. Outdoor haze uses BOTH eye and receiver skylight.
+- Dedicated neutral alpha-blended rain/snow color pass; rain.depth=false and no
+  material/normal writes. Reduce outdoor TAA history during precipitation.
+- Global block-light warmth/intensity controls, gentler neutral/cool emitter surface
+  emission, lower bloom defaults, bounded hue-aware filmic mix and exposure ceiling.
+  Wet roughness respects porosity; puddles exclude metals/glass. Caustics respect weather.
+- 22 compile configurations, additional contract/reference tests; Russian labels for
+  new controls. Actual world light-source colors/colored transmission from local
+  lamps are NOT supplied by the vanilla lightmap; no voxel backend added.
+- User reports prior packs work on both Iris and OptiFine. THIS build still needs
+  in-game comparison; static tests cannot establish parity with reference images.
+
+
 ## 1.3.2 — 2026-11-05, point-star reflection hotfix
 
 - Split the visible sky from the reflection environment: point stars stay in the

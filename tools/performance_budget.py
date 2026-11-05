@@ -23,8 +23,9 @@ def estimate(options, width=1920, height=1080):
             'colored_emitter_candidates_upper_bound': (width//2)*(height//2)*int(values['GI_SAMPLES']) if int(values['COLORED_LIGHTS']) else 0,
             'taa_resolve_enabled': int(values['TAA']) == 1,
             'single_rgba16f_effect_target_bytes': pixels * 8,
-            'labpbr_extra_single_rgba8_target_bytes': width*height*4 if int(values['LAB_PBR']) else 0,
-            'notes': 'Analytic only; not a total frame cost; ray counts exclude per-ray depth/lighting/occlusion reads, final upsample, overdraw, driver allocations and GPU timing.'}
+            'material_f0_single_rgba8_target_bytes': width*height*4,
+            'sheet_clouds_enabled': int(values['CLOUD_MODE'])==3 and int(values['CLOUD_QUALITY'])>0,
+            'notes': 'Analytic only; not a total frame cost; procedural sheet-sky noise is not counted as volume samples; ray counts exclude per-ray depth/lighting/occlusion reads, final upsample, overdraw, driver allocations and GPU timing.'}
 
 
 def main():

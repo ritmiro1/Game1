@@ -1,25 +1,30 @@
 #ifndef AETHERIS_REFLECTIONS
 #define AETHERIS_REFLECTIONS
 #include "/lib/hiz.glsl"
-// Bounded SSR with binary refinement, eye-plane/edge rejection and sky fallback.
+// Source alpha is opaque view depth, zero for sky/hand. Never use the later
+// translucent depth/normal layers to validate an earlier opaque HDR snapshot.
+vec4 reflectionTexel(vec2 uv){
+ vec2 size=vec2(viewWidth,viewHeight);
+ return texture2D(colortex3,(clamp(floor(uv*size),vec2(0),size-1.0)+0.5)/size);
+}
 vec3 reflectedScene(vec3 p,vec3 n,float rough,vec3 skyFallback){
  vec3 ray=safeNormalize(reflect(safeNormalize(p),n));
 #if REFLECTION_STEPS > 0
  if(length(p)>SSR_DISTANCE)return skyFallback;
  int budget=int(mix(float(REFLECTION_STEPS),max(4.0,float(REFLECTION_STEPS)*0.5),smoothstep(SSR_DISTANCE*0.3,SSR_DISTANCE,length(p))));
  vec3 origin=p+n*0.08,q=origin,previous=origin;
- #if HIZ_SSR == 1
+#if HIZ_SSR == 1
  int level=3;
 #endif
  for(int i=0;i<REFLECTION_STEPS;i++){
   if(i>=budget)break;
-  #if HIZ_SSR == 0
+#if HIZ_SSR == 0
   previous=q;q+=ray*(0.18+float(i)*0.12);
 #endif
   if(q.z>=-near)break;
   vec2 t=projectView(q);
   if(any(lessThan(t,vec2(0.001)))||any(greaterThan(t,vec2(0.999))))break;
-  #if HIZ_SSR == 1
+#if HIZ_SSR == 1
   if(level>=0){
    float zMin=minimumDepth(t,level),depthQ=-q.z;
    if(depthQ<zMin-0.06){
@@ -30,28 +35,32 @@ vec3 reflectedScene(vec3 p,vec3 n,float rough,vec3 skyFallback){
    level--;continue;
   }
 #endif
-  float d=texture2D(depthtex1,t).r;
-  if(d>=0.99999){
-#if HIZ_SSR == 1
-   previous=q;q+=ray*0.2;level=0;
-#endif
-   continue;
-  }
-  float delta=viewPosition(t,d).z-q.z;
-  if(delta>0.0 && delta<0.12+float(i)*0.07){
+  float sourceDepth=reflectionTexel(t).a;
+  float delta=-q.z-sourceDepth;
+  if(sourceDepth>0.0 && delta>0.0 && delta<0.12+float(i)*0.05){
    vec3 a=previous,b=q;
-   for(int j=0;j<4;j++){
-    vec3 mid=(a+b)*0.5;vec2 u=projectView(mid);
-    float md=texture2D(depthtex1,safeUV(u)).r;
-    if(md<0.99999 && viewPosition(u,md).z>mid.z)b=mid;else a=mid;
+   for(int j=0;j<5;j++){
+    vec3 mid=(a+b)*0.5;
+    float mz=reflectionTexel(safeUV(projectView(mid))).a;
+    if(mz>0.0 && -mid.z>mz)b=mid;else a=mid;
    }
-   vec2 hit=projectView((a+b)*0.5);
+   vec3 hitP=(a+b)*0.5;vec2 hit=projectView(hitP);
+   vec4 center=reflectionTexel(hit);
+   float residual=abs(center.a+hitP.z);
+   float tolerance=max(0.08,-hitP.z*0.003);
    float edge=min(min(hit.x,hit.y),min(1.0-hit.x,1.0-hit.y));
-   float confidence=smoothstep(0.0,0.12,edge)*(1.0-smoothstep(0.3,0.7,rough));
-   vec3 radiance=texture2D(colortex3,safeUV(hit)).rgb;
-   vec2 spread=vec2(rough*2.0)/vec2(viewWidth,viewHeight);
-   radiance=(radiance*2.0+texture2D(colortex3,safeUV(hit+spread)).rgb+texture2D(colortex3,safeUV(hit-spread)).rgb)*0.25;
-   return mix(skyFallback,radiance,confidence);
+   if(center.a>0.0 && residual<tolerance && length(hitP-origin)>0.15 && edge>0.0){
+    float confidence=smoothstep(0.0,0.12,edge)*(1.0-smoothstep(0.35,0.75,rough));
+    vec3 sum=center.rgb*2.0;float weight=2.0;
+    // Reject invalid/foreground taps instead of smearing held items across metals.
+    vec2 spread=vec2(rough*4.0)/vec2(viewWidth,viewHeight);
+    for(int tap=0;tap<4;tap++){
+     vec2 offset=tap==0?vec2(spread.x,0):(tap==1?vec2(-spread.x,0):(tap==2?vec2(0,spread.y):vec2(0,-spread.y)));
+     vec4 value=reflectionTexel(safeUV(hit+offset));
+     if(value.a>0.0 && abs(value.a-center.a)<max(0.12,center.a*0.015)){sum+=value.rgb;weight+=1.0;}
+    }
+    return mix(skyFallback,sum/weight,confidence);
+   }
   }
 #if HIZ_SSR == 1
   previous=q;q+=ray*0.12;level=0;

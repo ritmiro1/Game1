@@ -35,10 +35,8 @@ const int colortex3Format = RGBA16F;
 const int colortex4Format = RGBA16F;
 const int colortex5Format = RGBA16F;
 const int colortex6Format = RGBA16F;
-#if LAB_PBR == 1
-// Linear RGB F0 plus material AO: 4 bytes/texel instead of another HDR attachment.
+// RGB F0 is required for material-ID metals too, not only LabPBR.
 const int colortex7Format = RGBA8;
-#endif
 // Ping-pong history: RGB is scene-linear HDR, alpha is positive view depth.
 const bool colortex6Clear = false;
 const bool colortex0Clear = true;
@@ -50,6 +48,11 @@ void main(){float d=texture2D(depthtex0,uv).r;vec3 c=texture2D(colortex0,uv).rgb
  // Keep the direct scene unchanged. Remove point stars ONLY from the opaque
  // reflection/refraction source, including background texels used by SSR filtering.
  vec3 reflectionSource=c;
+ float sourceDepth=0.0;
+ if(d<0.99999){float marker=texture2D(colortex2,uv).a;
+  if(!(marker> -1.5 && marker< -0.5))sourceDepth=min(-viewPosition(uv,d).z,32000.0);
+  else reflectionSource=vec3(0.0);
+ }
  if(d>=0.99999){vec3 ray=safeNormalize(mat3(gbufferModelViewInverse)*viewPosition(uv,1.0));reflectionSource=reflectionSky(ray);}
- gl_FragData[0]=vec4(c,1);gl_FragData[1]=vec4(reflectionSource,1);
+ gl_FragData[0]=vec4(c,1);gl_FragData[1]=vec4(reflectionSource,sourceDepth);
 }

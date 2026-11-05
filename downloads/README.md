@@ -1,7 +1,7 @@
 # Release downloads
 
-Current experimental build: **Aetheris_v1.3.2.zip**.
-Source: **Aetheris_v1.3.2_SOURCE.zip**. Tag: `aetheris-v1.3.2`.
+Current experimental build: **Aetheris_v1.4.0.zip**.
+Source: **Aetheris_v1.4.0_SOURCE.zip**. Tag: `aetheris-v1.4.0`.
 Install only the first ZIP, unopened, in `.minecraft/shaderpacks/`, reset settings
 and start MEDIUM. HIGH/ULTRA add more expensive optional modes.
 

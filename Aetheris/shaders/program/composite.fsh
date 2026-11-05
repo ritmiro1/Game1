@@ -14,8 +14,8 @@ void main(){
  if(d>=0.99999)c=renderSky(safeNormalize(mat3(gbufferModelViewInverse)*p));
 #endif
  vec4 material=texture2D(colortex2,uv),nr=texture2D(colortex1,uv);
- vec3 n=safeNormalize(nr.xyz*2.0-1.0);bool water=material.g>0.5;
- if(d<0.99999 && (water || nr.a<0.45)){
+ vec3 n=safeNormalize(nr.xyz*2.0-1.0);bool water=material.g>0.5 && material.g<1.5;
+ if(d<0.99999 && !(material.a> -1.5 && material.a< -0.5) && (water || nr.a<0.7)){
   vec3 ray=reflect(safeNormalize(p),n);
   // Sky reflections are reduced indoors, rather than glowing in closed caves.
   vec3 rayW=safeNormalize(mat3(gbufferModelViewInverse)*ray);
@@ -38,7 +38,7 @@ void main(){
    vec3 under=texture2D(colortex3,refr).rgb*transmission;
 #if CAUSTICS == 1 && !defined(AETHER_NETHER) && !defined(AETHER_END)
    if(!submerged && rd<0.99999){vec3 ground=worldRelative(viewPosition(refr,rd))+cameraPosition;
-    under*=1.0+causticPattern(ground)*CAUSTIC_STRENGTH*exp(-thickness*0.15)*dayAmount()*material.b*shadowVisibilityFast(worldRelative(viewPosition(refr,rd)));}
+    under*=1.0+causticPattern(ground)*CAUSTIC_STRENGTH*celestialVisibility()*exp(-thickness*0.15)*dayAmount()*material.b*shadowVisibilityFast(worldRelative(viewPosition(refr,rd)));}
 #endif
    under+=vec3(0.012,0.075,0.095)*(1.0-transmission)*mix(0.12,1.0,dayAmount())*material.b;
    c=mix(under,reflected,f)+c*0.12;
@@ -47,19 +47,16 @@ void main(){
     c=mix(c,vec3(0.55,0.65,0.68)*mix(0.08,1.0,dayAmount()),foam);}
 #endif
   }else{
-   vec3 surfaceF0=mix(vec3(0.04),vec3(0.65),material.r);
-#if LAB_PBR == 1
-   surfaceF0=texture2D(colortex7,uv).rgb;
-#endif
+   vec3 surfaceF0=texture2D(colortex7,uv).rgb;
    vec3 F=fresnel(dot(n,safeNormalize(-p)),surfaceF0);
-   c=mix(c,reflected,F*(1.0-nr.a)*saturate(material.b));
+   c=mix(c,reflected,F*(1.0-nr.a));
   }
  }
  // Underwater attenuation once, after refraction, for the camera-to-surface segment.
  if(isEyeInWater==1){float waterDistance=d<0.99999?length(p):48.0;vec3 tr=waterTransmission(waterDistance);c=c*tr+vec3(0.01,0.065,0.085)*(1.0-tr)*mix(0.12,1.0,dayAmount());
 #if CAUSTICS == 1 && !defined(AETHER_NETHER) && !defined(AETHER_END)
  if(d<0.99999&&!water){vec3 worldN=mat3(gbufferModelViewInverse)*n;
-  c*=1.0+causticPattern(worldRelative(p)+cameraPosition)*CAUSTIC_STRENGTH*max(worldN.y,0.0)*material.b*dayAmount()*shadowVisibilityFast(worldRelative(p));}
+  c*=1.0+causticPattern(worldRelative(p)+cameraPosition)*CAUSTIC_STRENGTH*celestialVisibility()*max(worldN.y,0.0)*material.b*dayAmount()*shadowVisibilityFast(worldRelative(p));}
 #endif
  }
 #if VOLUMETRIC_STEPS > 0 && !defined(AETHER_NETHER) && !defined(AETHER_END)

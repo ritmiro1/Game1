@@ -28,17 +28,20 @@ vec3 shadeSurface(vec3 albedo,vec3 n,vec3 geometricN,vec3 vp,vec2 lm,float rough
  vec3 dimensionAmbient=vec3(0.0);
 #endif
  float sky=pow(saturate(lm.y),2.2);
- vec3 ambient=mix(vec3(0.009,0.016,0.032)*NIGHT_BRIGHTNESS,vec3(0.13,0.20,0.30),dayAmount())*(1.0-0.35*rainStrength);
- ambient*=mix(0.55,1.05,saturate(wn.y*0.5+0.5))*sky;
+ vec3 ambient=mix(vec3(0.009,0.016,0.032)*NIGHT_BRIGHTNESS,vec3(0.13,0.20,0.30),dayAmount());
+ ambient=mix(ambient,overcastRadiance()*0.9,weatherAmount());
+ float hemisphere=saturate(wn.y*0.5+0.5);
+ ambient*=mix(mix(0.55,1.05,hemisphere),mix(0.8,1.0,hemisphere),weatherAmount())*sky;
  // Low-energy ground bounce, gated by sky access to avoid glowing caves.
  ambient+=vec3(0.025,0.018,0.010)*dayAmount()*sky*(1.0-saturate(wn.y));
  // Vanilla propagated block light provides local illumination; not dynamic colored point lights.
  float held=float(max(heldBlockLightValue,heldBlockLightValue2))/15.0;
  float torch=max(pow(saturate((lm.x-0.03125)/0.9375),1.65),held*pow(saturate(1.0-length(vp)/12.0),2.0));
- vec3 block=vec3(1.0,0.68,0.40)*torch*0.9;
+ vec3 blockColor=mix(vec3(0.90,0.94,1.0),vec3(1.0,0.58,0.25),BLOCK_LIGHT_WARMTH);
+ vec3 block=blockColor*torch*BLOCK_LIGHT_STRENGTH;
  // Deliberate artistic readability floor, NOT bounced/voxel light. Zero restores darkness.
  vec3 caveFill=vec3(0.014,0.015,0.017)*CAVE_BRIGHTNESS*(1.0-sky);
  vec3 c=direct+albedo*((ambient+dimensionAmbient+caveFill)*ambientAO+block)+albedo*emissive*EMISSIVE_BRIGHTNESS;
- return aerialFog(c,vp);
+ return aerialFog(c,vp,lm.y);
 }
 #endif
