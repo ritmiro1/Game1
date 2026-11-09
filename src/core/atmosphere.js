@@ -293,7 +293,7 @@ export class Atmosphere {
           float dist = -mv.z;
           gl_Position = projectionMatrix * mv;
           vAlpha = clamp(1.0 - dist / 62.0, 0.0, 1.0);
-          gl_PointSize = mix(1.4, 2.6, uSnow) * uPixelRatio * 130.0 / max(dist, 6.0);
+          gl_PointSize = clamp(mix(1.4, 2.6, uSnow) * uPixelRatio * 130.0 / max(dist, 6.0), 1.0, 14.0);
         }
       `,
       fragmentShader: /* glsl */ `

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { Terrain, ISLANDS, WORLD } from '../gen/terrain.js';
 import { GeoBuilder } from '../gen/geobuilder.js';
 import { makeRNG, clamp, lerp, smoothstep, TAU } from '../core/math.js';
+import { normalizeVertexColors } from '../gen/textures.js';
 import {
   makePine,
   makeBirch,
@@ -93,6 +94,8 @@ export class World {
     const rng = makeRNG(2024);
     const mkInstanced = (geometry, material, transforms, name, castShadow = true, receiveShadow = true) => {
       if (!transforms.length) return null;
+      // цвета вершин для растительности — оттенок, а не яркость
+      if (material?.vertexColors) normalizeVertexColors(geometry);
       const im = new THREE.InstancedMesh(geometry, material, transforms.length);
       im.instanceMatrix.setUsage(THREE.StaticDrawUsage);
       const m = new THREE.Matrix4();
@@ -176,7 +179,7 @@ export class World {
     }
     for (let v = 0; v < 3; v++) {
       const subset = birchData.filter((p) => p.variant === v);
-      mkInstanced(birchTrunks[v], this.materials.bark(), subset, `birchTrunk${v}`, true, true);
+      mkInstanced(birchTrunks[v], this.materials.barkBirch(), subset, `birchTrunk${v}`, true, true);
       mkInstanced(birchFoliage[v], this.materials.leaf('birch'), subset, `birchLeaf${v}`, false, true);
     }
 

@@ -17,6 +17,7 @@ import {
   makePaperTexture,
   makeFoamTexture,
   makeRadialSprite,
+  normalizeVertexColors,
 } from '../gen/textures.js';
 
 function canvasToTexture(canvas, { repeat = [1, 1], aniso = 8, srgb = true, wrapping = THREE.RepeatWrapping } = {}) {
@@ -297,6 +298,8 @@ export class MaterialLibrary {
   leaf(kind = 'deciduous') {
     const key = 'leaf' + kind;
     if (this.cache.has(key)) return this.cache.get(key);
+    // если генератор карт недоступен — материал будет без текстуры,
+    // но с цветом; чёрных квадов при этом не появляется
     const color = kind === 'pine' ? [0.13, 0.30, 0.20] : kind === 'birch' ? [0.36, 0.50, 0.20] : [0.22, 0.42, 0.20];
     const canvas = makeLeafTexture(128, { color, needle: kind === 'pine' || kind === 'fir', seed: kind === 'pine' ? 61 : 63 });
     const tex = canvasToTexture(canvas, { aniso: this.aniso });

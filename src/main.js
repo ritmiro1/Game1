@@ -303,6 +303,7 @@ export class Game {
       }
       if (e.code === 'KeyJ') this.ui.openModal('journalModal');
       if (e.code === 'KeyE') this.interact();
+      if (e.code === 'F9') this.cycleDebugView();
     });
   }
 
@@ -634,6 +635,83 @@ export class Game {
     this.gfxScale = s;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * this.pipeline.preset.pixelRatio * s);
     this.pipeline.resize();
+  }
+
+  /**
+   * Пошаговая диагностика графики (F9). Помогает определить источник
+   * артефактов на конкретной видеокарте: растительность, точки, вода,
+   * постобработка или сама сцена.
+   */
+  cycleDebugView() {
+    const steps = [
+      { name: 'обычный кадр', apply: () => this._debugReset() },
+      { name: 'без растительности', apply: () => { this._debugReset(); this._hideByName(/leaf|grass|reeds|fern|flower|bush|lily/i); } },
+      { name: 'без любых прозрачных объектов', apply: () => { this._debugReset(); this._hideTransparent(); } },
+      { name: 'без частиц и точек', apply: () => { this._debugReset(); this._hidePoints(); } },
+      { name: 'без воды', apply: () => { this._debugReset(); this.water.mesh.visible = false; if (this.water.farWater) this.water.farWater.visible = false; } },
+      { name: 'без постобработки (прямой рендер)', apply: () => { this._debugReset(); this._debugNoPost = true; } },
+      { name: 'только геометрия, все материалы простые', apply: () => { this._debugReset(); this._debugFlatMaterials(); } },
+    ];
+    this._debugStep = ((this._debugStep ?? -1) + 1) % steps.length;
+    const step = steps[this._debugStep];
+    step.apply();
+    this.ui.toast(`Диагностика ${this._debugStep + 1}/${steps.length}: ${step.name}`, 'good');
+    console.log('[F9]', this._debugStep + 1, step.name);
+  }
+
+  _debugReset() {
+    this._debugNoPost = false;
+    this.scene.traverse((o) => {
+      if (o.userData.__dbgHidden) {
+        o.visible = o.userData.__dbgWasVisible;
+        delete o.userData.__dbgHidden;
+      }
+      if (o.userData.__dbgMat) {
+        o.material = o.userData.__dbgMat;
+        delete o.userData.__dbgMat;
+        if (Array.isArray(o.userData.__dbgMatAlt)) delete o.userData.__dbgMatAlt;
+      }
+    });
+    this.water.mesh.visible = true;
+    if (this.water.farWater) this.water.farWater.visible = true;
+    if (this.player?.model) this.player.model.root.visible = this.player.viewMode === 'third';
+  }
+
+  _hideObj(o) {
+    if (!o.visible) return;
+    o.userData.__dbgWasVisible = o.visible;
+    o.userData.__dbgHidden = true;
+    o.visible = false;
+  }
+
+  _hideByName(re) {
+    this.scene.traverse((o) => {
+      if ((o.isMesh || o.isInstancedMesh || o.isPoints) && re.test(o.name || '')) this._hideObj(o);
+    });
+  }
+
+  _hideTransparent() {
+    this.scene.traverse((o) => {
+      if (!(o.isMesh || o.isInstancedMesh || o.isPoints)) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      if (mats.some((m) => m && (m.transparent || m.alphaTest > 0))) this._hideObj(o);
+    });
+  }
+
+  _hidePoints() {
+    this.scene.traverse((o) => {
+      if (o.isPoints) this._hideObj(o);
+    });
+  }
+
+  _debugFlatMaterials() {
+    const flat = new THREE.MeshBasicMaterial({ color: 0xb9c6cc, wireframe: false });
+    this.scene.traverse((o) => {
+      if (!(o.isMesh || o.isInstancedMesh) || !o.visible) return;
+      if (o.material === flat) return;
+      o.userData.__dbgMat = o.material;
+      o.material = flat;
+    });
   }
 
   setGrassDensity(d) {
@@ -1015,7 +1093,12 @@ export class Game {
       this.water.renderReflection(this.renderer, this.scene, this.camera, []);
     }
 
-    this.pipeline.render(dt);
+    if (this._debugNoPost) {
+      this.renderer.renderer.setRenderTarget(null);
+      this.renderer.renderer.render(this.scene, this.camera);
+    } else {
+      this.pipeline.render(dt);
+    }
   }
 
   _boatInput() {

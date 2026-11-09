@@ -252,7 +252,7 @@ export class EmberSystem {
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
           vAlpha = (1.0 - t) * smoothstep(0.0, 0.15, t);
-          gl_PointSize = uSize * (1.0 - t * 0.6) / max(-mv.z * 0.06, 1.0);
+          gl_PointSize = clamp(uSize * (1.0 - t * 0.6) / max(-mv.z * 0.06, 1.0), 1.0, 64.0);
         }
       `,
       fragmentShader: `
@@ -319,7 +319,7 @@ export class Fireflies {
           gl_Position = projectionMatrix * mv;
           float blink = pow(max(sin(uTime * 1.6 + aPhase * 3.0), 0.0), 3.0);
           vA = blink * uVisible;
-          gl_PointSize = uSize * (0.6 + blink) * (300.0 / max(-mv.z, 1.0));
+          gl_PointSize = clamp(uSize * (0.6 + blink) * (300.0 / max(-mv.z, 1.0)), 1.0, 48.0);
         }
       `,
       fragmentShader: `

@@ -12,6 +12,25 @@ export function createCanvas(w, h) {
   return c;
 }
 
+/**
+ * Приводит цвет вершин к множителю для текстуры: самая яркая компонента
+ * нормализуется к 1. Сами цвета несут оттенок, а не яркость — иначе
+ * color × map даёт почти чёрную растительность.
+ */
+export function normalizeVertexColors(geometry) {
+  const attr = geometry?.attributes?.color;
+  if (!attr) return geometry;
+  const a = attr.array;
+  let max = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] > max) max = a[i];
+  // достаточно светлые цвета (кора, камни) не трогаем — они уже множители
+  if (!(max > 0.0001) || max >= 0.5) return geometry;
+  const k = 1 / max;
+  for (let i = 0; i < a.length; i++) a[i] = Math.min(1, a[i] * k);
+  attr.needsUpdate = true;
+  return geometry;
+}
+
 export function canvasTexture(canvas, renderer) {
   return canvas;
 }

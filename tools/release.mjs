@@ -192,6 +192,10 @@ step(`кросс-компилятор: zig ${zig.version}`);
 fs.mkdirSync(releaseDir, { recursive: true });
 for (const f of fs.readdirSync(releaseDir)) fs.rmSync(path.join(releaseDir, f), { recursive: true, force: true });
 
+// Процедурные текстуры: листва не должна быть чёрной
+step('проверка текстур листвы…');
+execFileSync(process.execPath, [path.join(root, 'tools', 'texture_preview.mjs')], { stdio: 'inherit' });
+
 // HTTP-часть .exe проверяем нативным тестом: тот же httpd.c, реальные запросы
 step('нативный тест HTTP-сервера (.exe отдаёт игру локально)…');
 execFileSync(process.execPath, [path.join(root, 'tools', 'test_httpd.mjs')], { stdio: 'inherit' });

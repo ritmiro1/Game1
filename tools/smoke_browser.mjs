@@ -301,6 +301,276 @@ if (game && game.state === 'menu') {
   check(game.player.position.y > -5, `игрок не провалился (y=${game.player.position.y.toFixed(2)})`);
   check(game.camera.position.y > -2, 'камера выше уровня воды');
 
+  // --- что стоит перед камерой в точке старта (рейкаст по всем мешам)
+  {
+    const THREE = game.THREE || (await import('three'));
+    const ray = new THREE.Raycaster();
+    const dir = new THREE.Vector3();
+    game.camera.getWorldDirection(dir);
+    ray.set(game.camera.position.clone(), dir);
+    ray.far = 60;
+    const hits = ray.intersectObject(game.scene, true).slice(0, 6);
+    report.push(`· луч из камеры (${dir.x.toFixed(2)}, ${dir.y.toFixed(2)}, ${dir.z.toFixed(2)}) попал в ${hits.length} объектов:`);
+    for (const h of hits) {
+      const o = h.object;
+      const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+      const col = mat?.color ? '#' + mat.color.getHexString() : '—';
+      report.push(
+        `·   ${h.distance.toFixed(2)} м — «${o.name || o.type}» (${o.type}) mat=${mat?.type || '—'} цвет=${col}` +
+          ` размер≈${(o.geometry?.boundingSphere?.radius || 0).toFixed(1)}`
+      );
+    }
+    globalThis.__startHits = hits.map((h) => ({ name: h.object.name, type: h.object.type, d: +h.distance.toFixed(2) }));
+  }
+
+  // --- диагностика кадра: кто занимает экран (DIAG=1)
+  if (process.env.DIAG) {
+    const THREE = game.THREE || (await import('three'));
+    const cam = game.camera;
+    const ray = new THREE.Raycaster();
+
+    // собираем только РЕАЛЬНО видимые меши (raycaster в three не смотрит visible)
+    const visible = [];
+    const isVisible = (o) => {
+      for (let n = o; n; n = n.parent) if (n.visible === false) return false;
+      return true;
+    };
+    game.scene.traverse((o) => {
+      if (o.isMesh && isVisible(o)) visible.push(o);
+    });
+    report.push(`· ДИАГ: видимых мешей ${visible.length}, модель игрока visible=${game.player.model.root.visible}, view=${game.player.viewMode}`);
+    // какие слои интерфейса остались активными
+    const layers = [];
+    document.querySelectorAll('.overlay, #hud, #dialog, #catchPop, #achPop, #fightWrap').forEach((el) => {
+      if (el.classList.contains('hidden')) return;
+      const st = window.getComputedStyle(el);
+      layers.push(`#${el.id || el.className}: display=${st.display} opacity=${st.opacity} z=${st.zIndex}`);
+    });
+    // все видимые элементы с фоном/размытием — источник чёрных прямоугольников
+    const painted = [];
+    document.querySelectorAll('#hud *, .overlay *').forEach((el) => {
+      const st = window.getComputedStyle(el);
+      if (st.display === 'none') return;
+      const bf = st.backdropFilter || st.webkitBackdropFilter;
+      const bg = st.backgroundColor;
+      const hasVisual = (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') || (bf && bf !== 'none');
+      if (!hasVisual) return;
+      painted.push(`${el.tagName.toLowerCase()}#${el.id || ''}.${(el.className || '').toString().split(' ').filter(Boolean).join('.')} bg=${bg} backdrop=${bf || '—'} radius=${st.borderRadius}`);
+    });
+    report.push(`· ДИАГ: элементы с фоном/размытием (${painted.length}):`);
+    for (const l of painted.slice(0, 25)) report.push('·   ' + l);
+
+    report.push(`· ДИАГ: активные слои интерфейса (${layers.length}):`);
+    for (const l of layers) report.push('·   ' + l);
+
+    const tally = new Map();
+    let miss = 0;
+    for (let gy = -4; gy <= 4; gy++)
+      for (let gx = -4; gx <= 4; gx++) {
+        ray.setFromCamera(new THREE.Vector2(gx / 4, gy / 4), cam);
+        ray.far = 200;
+        const hit = ray.intersectObjects(visible, false)[0];
+        if (!hit) {
+          miss++;
+          continue;
+        }
+        const o = hit.object;
+        const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+        const col = mat?.color ? '#' + mat.color.getHexString() : '—';
+        const key = `${o.name || o.type}|${mat?.type || '—'}|${col}`;
+        const cur = tally.get(key) || { n: 0, d: hit.distance };
+        cur.n++;
+        cur.d = Math.min(cur.d, hit.distance);
+        tally.set(key, cur);
+      }
+    report.push('· ДИАГ: 81 луч по экрану (только видимое):');
+    for (const [k, v] of [...tally.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 12)) {
+      report.push(`·   ${v.n}/81 — ${k}, ближайший ${v.d.toFixed(1)} м`);
+    }
+    report.push(`·   промахов (небо): ${miss}/81`);
+
+    // точки (частицы) — надо посмотреть отдельно, raycaster их не берёт
+    const points = [];
+    game.scene.traverse((o) => {
+      if (o.isPoints && isVisible(o)) {
+        const u = o.material?.uniforms || {};
+        points.push({
+          n: o.geometry?.attributes?.position?.count,
+          size: u.uSize?.value,
+          blend: o.material?.blending,
+          depthTest: o.material?.depthTest,
+          depthWrite: o.material?.depthWrite,
+          visible: o.visible,
+        });
+      }
+    });
+    // Материалы с vertexColors требуют атрибут color — иначе WebGL даёт чёрный
+    const badVC = new Map();
+    game.scene.traverse((o) => {
+      if (!o.isMesh && !o.isInstancedMesh) return;
+      const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!mat?.vertexColors) return;
+      const has = !!o.geometry?.attributes?.color;
+      if (!has) {
+        const key = `${o.name || o.type} mat=${mat.name || mat.type}`;
+        badVC.set(key, (badVC.get(key) || 0) + 1);
+      }
+    });
+    report.push(`· ДИАГ: мешей с vertexColors БЕЗ атрибута color: ${badVC.size} групп`);
+    for (const [k, n] of badVC) report.push(`·   ${n}× ${k}`);
+
+    // материалы, у которых карта помечена sRGB, но её нет / текстуры не загружены
+    const noMapTex = new Map();
+    game.scene.traverse((o) => {
+      if (!o.isMesh && !o.isInstancedMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m) continue;
+        for (const slot of ['map', 'normalMap', 'roughnessMap', 'alphaMap', 'emissiveMap']) {
+          const t = m[slot];
+          if (t && !t.image) {
+            const key = `${m.name || m.type}.${slot}`;
+            noMapTex.set(key, (noMapTex.get(key) || 0) + 1);
+          }
+        }
+      }
+    });
+    report.push(`· ДИАГ: текстур без изображения: ${noMapTex.size} шт`);
+    for (const [k, n] of noMapTex) report.push(`·   ${n}× ${k}`);
+
+    // вершинные цвета и альфа-маска листвы/травы
+    game.scene.traverse((o) => {
+      if (!o.isInstancedMesh) return;
+      const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!mat?.vertexColors) return;
+      const ca = o.geometry?.attributes?.color;
+      if (!ca) return;
+      let min = 9, max = -9, sum = 0;
+      for (let i = 0; i < ca.array.length; i++) {
+        const v = ca.array[i];
+        if (v < min) min = v;
+        if (v > max) max = v;
+        sum += v;
+      }
+      report.push(`·   «${o.name}» вершинные цвета: min=${min.toFixed(3)} max=${max.toFixed(3)} среднее=${(sum / ca.array.length).toFixed(3)} (itemSize=${ca.itemSize})`);
+    });
+
+    // размеры render-target'ов и проходов постобработки
+    const pipe = game.pipeline;
+    report.push(`· ДИАГ: canvas=${pipe.renderer.domElement.width}×${pipe.renderer.domElement.height} pixelRatio=${pipe.renderer.getPixelRatio()}`);
+    report.push(`· ДИАГ: composer RT=${pipe.composer?.renderTarget1?.width}×${pipe.composer?.renderTarget1?.height} samples=${pipe.composer?.renderTarget1?.samples}`);
+    for (const pass of pipe.composer?.passes || []) {
+      const rts = [];
+      for (const k of Object.keys(pass)) {
+        const v = pass[k];
+        if (v && v.isWebGLRenderTarget) rts.push(`${k}=${v.width}×${v.height} samples=${v.samples ?? 0} type=${v.texture?.type}`);
+      }
+      report.push(`·   проход ${pass.constructor.name} enabled=${pass.enabled} ${rts.join(', ')}`);
+    }
+
+    // самые тёмные материалы сцены
+    const dark = [];
+    game.scene.traverse((o) => {
+      if ((!o.isMesh && !o.isInstancedMesh) || !isVisible(o)) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m?.color) continue;
+        const c = m.color;
+        const lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+        if (lum > 0.06) continue;
+        let count = 1;
+        if (o.isInstancedMesh) count = o.count;
+        dark.push({ name: o.name || o.type, mat: m.name || m.type, col: '#' + c.getHexString(), lum, count, order: o.renderOrder, tr: m.transparent, op: m.opacity });
+      }
+    });
+    report.push(`· ДИАГ: очень тёмных материалов: ${dark.length}`);
+    for (const d of dark.sort((a, b) => a.lum - b.lum).slice(0, 12)) {
+      report.push(`·   «${d.name}» ${d.col} lum=${d.lum.toFixed(3)} inst=${d.count} order=${d.order} transparent=${d.tr} opacity=${d.op} mat=${d.mat}`);
+    }
+
+    // какие ИНСТАНСЫ закрывают экран (проекция на экран, а не луч)
+    {
+      const proj = [];
+      const W = pipe.renderer.domElement.width, H = pipe.renderer.domElement.height;
+      const tmpM = new THREE.Matrix4();
+      const tmpV = new THREE.Vector3();
+      game.scene.traverse((o) => {
+        if (!o.isInstancedMesh || !isVisible(o)) return;
+        const g = o.geometry;
+        if (!g.boundingSphere) g.computeBoundingSphere();
+        const radius = g.boundingSphere?.radius || 0.5;
+        for (let i = 0; i < o.count; i++) {
+          o.getMatrixAt(i, tmpM);
+          tmpV.setFromMatrixPosition(tmpM).applyMatrix4(o.matrixWorld);
+          const dist = tmpV.distanceTo(cam.position);
+          if (dist > 12) continue;
+          const ndc = tmpV.clone().project(cam);
+          if (ndc.z < -1 || ndc.z > 1) continue;
+          // размер на экране (пиксели по вертикали)
+          const pix = (radius * H) / (dist * Math.tan((cam.fov * Math.PI) / 360));
+          if (pix < 60) continue;
+          proj.push({
+            name: o.name,
+            i,
+            dist: +dist.toFixed(2),
+            pix: Math.round(pix),
+            x: Math.round((ndc.x * 0.5 + 0.5) * W),
+            y: Math.round((0.5 - ndc.y * 0.5) * H),
+          });
+        }
+      });
+      // реальные габариты растительности: радиус геометрии × масштаб инстанса
+      const sizes = new Map();
+      const sc = new THREE.Vector3();
+      game.scene.traverse((o) => {
+        if (!o.isInstancedMesh || !isVisible(o)) return;
+        const g = o.geometry;
+        if (!g.boundingSphere) g.computeBoundingSphere();
+        const r = g.boundingSphere?.radius || 0;
+        let minS = Infinity, maxS = 0;
+        for (let i = 0; i < Math.min(o.count, 200); i++) {
+          o.getMatrixAt(i, tmpM);
+          tmpM.decompose(tmpV, new THREE.Quaternion(), sc);
+          const s = Math.max(sc.x, sc.y, sc.z);
+          if (s < minS) minS = s;
+          if (s > maxS) maxS = s;
+        }
+        sizes.set(o.name, `${r.toFixed(2)} м × ${minS.toFixed(2)}–${maxS.toFixed(2)} ⇒ ${(r * minS).toFixed(2)}–${(r * maxS).toFixed(2)} м`);
+      });
+      report.push('· ДИАГ: размеры растительности (радиус × масштаб):');
+      for (const [k, v] of sizes) report.push(`·   ${k}: ${v}`);
+
+      // точные точки, где на снимке из Windows были чёрные прямоугольники
+      report.push('· ДИАГ: что в точках чёрных прямоугольников:');
+      for (const [label, nx, ny] of [['левый', -0.76, 0.03], ['правый', 0.22, -0.17], ['центр', 0, 0]]) {
+        const r3 = new THREE.Raycaster();
+        r3.setFromCamera(new THREE.Vector2(nx, ny), cam);
+        r3.far = 60;
+        const hit = r3.intersectObjects(visible, false)[0];
+        if (!hit) {
+          report.push(`·   ${label} (${nx}, ${ny}): небо`);
+          continue;
+        }
+        const o = hit.object;
+        const chain = [];
+        for (let n = o; n && chain.length < 4; n = n.parent) chain.push(n.name || n.type);
+        const mat = Array.isArray(o.material) ? o.material[0] : o.material;
+        report.push(
+          `·   ${label} (${nx}, ${ny}): ${hit.distance.toFixed(2)} м «${chain.join(' < ')}»` +
+            `${hit.instanceId != null ? ' instance#' + hit.instanceId : ''} mat=${mat?.name || mat?.type}`
+        );
+      }
+
+      report.push(`· ДИАГ: инстансы, закрывающие экран (${proj.length}):`);
+      for (const p of proj.sort((a, b) => b.pix - a.pix).slice(0, 10)) {
+        report.push(`·   «${p.name}»[${p.i}] ${p.dist} м, ~${p.pix} px, экран (${p.x},${p.y})`);
+      }
+    }
+
+    report.push(`· ДИАГ: системы точек: ${points.length}`);
+    for (const p of points) report.push(`·   ${p.n} частиц, uSize=${p.size}, blending=${p.blend}, depthTest=${p.depthTest}`);
+  }
+
   // --- ходьба
   const p0 = game.player.position.clone();
   game.player.keys.add('KeyW');
