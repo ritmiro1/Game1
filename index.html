@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Тихий Залив — 3D-симулятор рыбалки и исследований</title>
+<meta name="description" content="Тихий Залив — атмосферный 3D-симулятор рыбалки и исследований на процедурном архипелаге." />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- ================= ЗАГРУЗКА ================= -->
+<div id="loading" class="overlay show">
+  <div class="load-wrap">
+    <div class="load-title">ТИХИЙ ЗАЛИВ</div>
+    <div class="load-sub">генерация архипелага, воды и звука</div>
+    <div class="load-bar"><div class="load-fill" id="loadFill"></div></div>
+    <div class="load-status" id="loadStatus">Подготовка мира…</div>
+    <div class="load-tip" id="loadTip">Совет: в тумане рыба подходит ближе к берегу.</div>
+  </div>
+</div>
+
+<!-- ================= ГЛАВНОЕ МЕНЮ ================= -->
+<div id="menu" class="overlay menu-overlay hidden">
+  <div class="menu-bg"></div>
+  <div class="menu-left">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 40c8-10 16-10 24 0 8-10 16-10 24 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="44" cy="20" r="3.4" fill="currentColor"/><path d="M10 50h44" stroke="currentColor" stroke-width="1.2" opacity=".5"/></svg>
+      </div>
+      <h1>ТИХИЙ&nbsp;ЗАЛИВ</h1>
+      <p class="brand-sub">3D-симулятор рыбалки и исследований</p>
+    </div>
+    <nav class="menu-nav" id="menuNav">
+      <button class="mbtn primary" data-act="continue">Продолжить</button>
+      <button class="mbtn" data-act="new">Новая игра</button>
+      <button class="mbtn" data-act="settings">Настройки</button>
+      <button class="mbtn" data-act="journal">Журнал и рыбы</button>
+      <button class="mbtn" data-act="achievements">Достижения</button>
+      <button class="mbtn" data-act="presets">Графические пресеты</button>
+      <button class="mbtn" data-act="ideas">100 идей 3D-игр</button>
+      <button class="mbtn ghost" data-act="quit">Выход</button>
+    </nav>
+    <div class="menu-foot">
+      <span id="versionTag">v1.0.0</span>
+      <span class="dot">•</span>
+      <span id="saveInfo">сохранений нет</span>
+    </div>
+  </div>
+  <div class="menu-right">
+    <div class="panel glass">
+      <div class="panel-h">СОСТОЯНИЕ ЗАЛИВА</div>
+      <div class="stat-row"><span>День</span><b id="mDay">1</b></div>
+      <div class="stat-row"><span>Время</span><b id="mClock">08:15</b></div>
+      <div class="stat-row"><span>Погода</span><b id="mWeather">Ясно</b></div>
+      <div class="stat-row"><span>Поймано рыб</span><b id="mFish">0</b></div>
+      <div class="stat-row"><span>Видов открыто</span><b id="mSpecies">0 / 12</b></div>
+      <div class="stat-row"><span>Заработано</span><b id="mMoney">0 ₽</b></div>
+      <div class="hint" id="menuHint">Тихий Залив ждёт. Возьмите удочку на причале.</div>
+    </div>
+    <div class="panel glass small" id="qualityPanel">
+      <div class="panel-h">КАЧЕСТВО ГРАФИКИ</div>
+      <div class="seg" id="qualitySeg">
+        <button data-q="low">Низкое</button>
+        <button data-q="medium">Среднее</button>
+        <button data-q="high">Высокое</button>
+        <button data-q="ultra">Ультра</button>
+      </div>
+      <div class="hint" id="qualityHint">Высокое — SSAO, Bloom, Tilt-Shift DOF, отражения.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ПРЕСЕТЫ (ФАЗА 0) ================= -->
+<div id="presetsModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Графика и анимация — выберите пресет</h2>
+      <button class="iconbtn" data-close="presetsModal">✕</button>
+    </div>
+    <p class="modal-sub">Все пресеты меняют визуальный стиль, шейдеры и атмосферу. Настройки можно менять в любой момент.</p>
+    <div class="preset-grid" id="presetGrid">
+      <button class="preset-card" data-preset="A">
+        <div class="preset-tag">ПРЕСЕТ А</div>
+        <h3>Атмосферный 3D-симулятор рыбалки и исследований</h3>
+        <p>Реалистичная процедурная вода с каустикой и пеной, физика плавучести лодки, пружинная физика лески и удочки, PBR-материалы, сменяемый день/ночь, туман.</p>
+        <span class="preset-badge">рекомендуется</span>
+      </button>
+      <button class="preset-card" data-preset="B">
+        <div class="preset-tag">ПРЕСЕТ Б</div>
+        <h3>Детализированный 3D-экшен в открытом мире</h3>
+        <p>Высокополигональные модели окружения, частичное разрушение объектов, умный AI с поиском путей, мягкие динамические тени, SSAO и физика частиц.</p>
+      </button>
+      <button class="preset-card" data-preset="C">
+        <div class="preset-tag">ПРЕСЕТ В</div>
+        <h3>Тактильная 3D-физическая песочница-сим</h3>
+        <p>Детализированная физика твёрдых тел, процедурная сборка инструментов, пружинная анимация взаимодействий, блум, кинематографическая камера.</p>
+      </button>
+      <button class="preset-card" data-preset="D">
+        <div class="preset-tag">ПРЕСЕТ Г</div>
+        <h3>Уютный 3D-исследователь с глубоким сюжетом</h3>
+        <p>Живописная атмосфера, глубокое Tilt-Shift размытие, многослойный эмбиент, инвентарь, квесты и диалоги. Стиль A Short Hike / Firewatch.</p>
+      </button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-close="presetsModal">Закрыть</button>
+      <button class="btn primary" id="applyPreset">Применить пресет</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= HUD ================= -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div class="hud-clock glass">
+      <div class="clock-time" id="hudClock">08:15</div>
+      <div class="clock-meta">
+        <span id="hudDay">День 1</span>
+        <span class="sep">·</span>
+        <span id="hudWeather">Ясно</span>
+      </div>
+      <div class="sunbar"><div class="sunbar-fill" id="sunBar"></div></div>
+    </div>
+    <div class="hud-center">
+      <div class="compass glass" id="compass">
+        <div class="compass-strip" id="compassStrip"></div>
+        <div class="compass-needle"></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <div class="glass wallet"><span class="coin">₽</span><b id="hudMoney">0</b></div>
+      <div class="glass status-pill" id="staminaPill">
+        <span class="label">Силы</span>
+        <div class="bar"><i id="staminaBar"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-crosshair" id="crosshair"></div>
+  <div class="hud-prompt glass hidden" id="interactPrompt"></div>
+
+  <div class="hud-quest glass" id="questPanel">
+    <div class="quest-h">ЗАДАНИЕ</div>
+    <div class="quest-title" id="questTitle">Ознакомиться с заливом</div>
+    <div class="quest-desc" id="questDesc">Поговорите с маяком. Поймайте первую рыбу.</div>
+    <ul class="quest-list" id="questList"></ul>
+  </div>
+
+  <div class="hud-fishing glass hidden" id="fishingPanel">
+    <div class="f-line"><span class="f-label">Наживка</span><b id="fBait">Червь</b><span id="fBaitCount">×30</span></div>
+    <div class="f-line"><span class="f-label">Статус</span><b id="fStatus">ЛКМ — заброс</b></div>
+    <div class="tension-wrap" id="tensionWrap">
+      <div class="tension-label">Натяжение лески</div>
+      <div class="tension-bar"><i id="tensionBar"></i><span class="tension-danger"></span></div>
+    </div>
+    <div class="fight-wrap hidden" id="fightWrap">
+      <div class="fight-label">Вываживание</div>
+      <div class="fight-bar"><i id="fightBar"></i></div>
+      <div class="fish-strength">Сила рыбы: <b id="fishStrength">—</b></div>
+    </div>
+  </div>
+
+  <div class="hud-depth glass" id="depthPanel">
+    <div class="depth-row"><span>Глубина</span><b id="hudDepth">0.0 м</b></div>
+    <div class="depth-row"><span>Грунт</span><b id="hudBottom">—</b></div>
+    <div class="depth-row"><span>Рыба рядом</span><b id="hudFishNear">—</b></div>
+  </div>
+
+  <div class="catch-popup hidden" id="catchPopup">
+    <div class="catch-inner">
+      <div class="catch-title" id="catchTitle">Поймана рыба!</div>
+      <div class="catch-name" id="catchName">Окунь</div>
+      <div class="catch-meta" id="catchMeta">0.42 кг · 24 см · 18 ₽</div>
+      <div class="catch-note" id="catchNote"></div>
+    </div>
+  </div>
+
+  <div class="ach-popup hidden" id="achPopup">
+    <div class="ach-icon">★</div>
+    <div class="ach-text">
+      <div class="ach-h">ДОСТИЖЕНИЕ</div>
+      <div class="ach-name" id="achName">—</div>
+      <div class="ach-desc" id="achDesc">—</div>
+    </div>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="hotbar" id="hotbar"></div>
+    <div class="hud-hints">
+      <span><kbd>W A S D</kbd> движение</span>
+      <span><kbd>Shift</kbd> бег</span>
+      <span><kbd>C</kbd> присесть</span>
+      <span><kbd>V</kbd> вид</span>
+      <span><kbd>E</kbd> действие</span>
+      <span><kbd>F</kbd> удочка</span>
+      <span><kbd>Tab</kbd> инвентарь</span>
+      <span><kbd>J</kbd> журнал</span>
+      <span><kbd>Esc</kbd> пауза</span>
+    </div>
+  </div>
+
+  <div class="hud-vignette"></div>
+  <div class="hud-notify" id="hudNotify"></div>
+</div>
+
+<!-- ================= ПАУЗА ================= -->
+<div id="pauseModal" class="overlay modal-overlay hidden">
+  <div class="modal narrow">
+    <div class="modal-head"><h2>Пауза</h2></div>
+    <div class="pause-nav">
+      <button class="btn primary" data-act="resume">Продолжить</button>
+      <button class="btn" data-act="settings">Настройки</button>
+      <button class="btn" data-act="journal">Журнал</button>
+      <button class="btn" data-act="save">Сохранить игру</button>
+      <button class="btn" data-act="load">Загрузить игру</button>
+      <button class="btn ghost" data-act="menu">В главное меню</button>
+    </div>
+    <div class="pause-stats" id="pauseStats"></div>
+  </div>
+</div>
+
+<!-- ================= НАСТРОЙКИ ================= -->
+<div id="settingsModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Настройки</h2>
+      <button class="iconbtn" data-close="settingsModal">✕</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="gfx">Графика</button>
+      <button class="tab" data-tab="snd">Звук</button>
+      <button class="tab" data-tab="ctl">Управление</button>
+    </div>
+
+    <div class="tab-body" data-body="gfx">
+      <div class="row">
+        <label>Пресет качества</label>
+        <div class="seg" id="gfxQuality">
+          <button data-q="low">Низкое</button>
+          <button data-q="medium">Среднее</button>
+          <button data-q="high">Высокое</button>
+          <button data-q="ultra">Ультра</button>
+        </div>
+      </div>
+      <div class="row"><label>Масштаб разрешения</label><input type="range" id="gfxScale" min="0.6" max="2" step="0.05" value="1" /><output id="gfxScaleOut">1.00</output></div>
+      <div class="row"><label>Тени</label><input type="checkbox" id="gfxShadows" checked /><output>динамические</output></div>
+      <div class="row"><label>SSAO / GTAO</label><input type="checkbox" id="gfxSSAO" checked /><output>затенение</output></div>
+      <div class="row"><label>Bloom</label><input type="checkbox" id="gfxBloom" checked /><output>свечение</output></div>
+      <div class="row"><label>Tilt-Shift DOF</label><input type="checkbox" id="gfxDOF" checked /><output>размытие</output></div>
+      <div class="row"><label>Отражения на воде</label><input type="checkbox" id="gfxReflect" checked /><output>планарные</output></div>
+      <div class="row"><label>Плотность травы</label><input type="range" id="gfxGrass" min="0.2" max="1.5" step="0.05" value="1" /><output id="gfxGrassOut">1.00</output></div>
+      <div class="row"><label>Экспозиция</label><input type="range" id="gfxExposure" min="0.6" max="1.6" step="0.02" value="1" /><output id="gfxExposureOut">1.00</output></div>
+      <div class="row"><label>Кино-грейд</label><input type="range" id="gfxGrade" min="0" max="1" step="0.05" value="0.5" /><output>плёнка</output></div>
+    </div>
+
+    <div class="tab-body hidden" data-body="snd">
+      <div class="row"><label>Общая громкость</label><input type="range" id="sndMaster" min="0" max="1" step="0.01" value="0.85" /><output id="sndMasterOut">85%</output></div>
+      <div class="row"><label>Музыка</label><input type="range" id="sndMusic" min="0" max="1" step="0.01" value="0.62" /><output id="sndMusicOut">62%</output></div>
+      <div class="row"><label>Эффекты</label><input type="range" id="sndSfx" min="0" max="1" step="0.01" value="0.85" /><output id="sndSfxOut">85%</output></div>
+      <div class="row"><label>Окружение</label><input type="range" id="sndAmb" min="0" max="1" step="0.01" value="0.7" /><output id="sndAmbOut">70%</output></div>
+      <div class="row"><label>Динамическая музыка</label><input type="checkbox" id="sndMusicOn" checked /><output>адаптивная</output></div>
+      <div class="row"><label>Пространственный звук</label><input type="checkbox" id="snd3D" checked /><output>HRTF</output></div>
+    </div>
+
+    <div class="tab-body hidden" data-body="ctl">
+      <div class="row"><label>Чувствительность мыши</label><input type="range" id="ctlSens" min="0.4" max="3" step="0.05" value="1" /><output id="ctlSensOut">1.00</output></div>
+      <div class="row"><label>Инверсия по Y</label><input type="checkbox" id="ctlInvertY" /><output>выкл</output></div>
+      <div class="row"><label>Покачивание камеры</label><input type="range" id="ctlBob" min="0" max="2" step="0.05" value="1" /><output id="ctlBobOut">1.00</output></div>
+      <div class="keybind-list" id="keybindList"></div>
+      <div class="hint">Нажмите на клавишу, затем новую клавишу для переназначения.</div>
+      <div class="row"><button class="btn ghost" id="resetKeys">Сбросить управление</button><output>по умолчанию</output></div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn ghost" data-close="settingsModal">Закрыть</button>
+      <button class="btn primary" id="saveSettings">Применить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ИНВЕНТАРЬ ================= -->
+<div id="inventoryModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Инвентарь и снасти</h2>
+      <button class="iconbtn" data-close="inventoryModal">✕</button>
+    </div>
+    <div class="inv-grid">
+      <div class="inv-left">
+        <div class="inv-section-h">РЮКЗАК</div>
+        <div class="inv-slots" id="invSlots"></div>
+        <div class="inv-section-h">НАЖИВКА</div>
+        <div class="bait-list" id="baitList"></div>
+      </div>
+      <div class="inv-right">
+        <div class="inv-section-h">СНАСТИ</div>
+        <div class="gear-card" id="rodCard">
+          <div class="gear-name" id="rodName">Бамбуковая удочка</div>
+          <div class="gear-desc" id="rodDesc"></div>
+          <div class="gear-stats" id="rodStats"></div>
+          <button class="btn small" id="upgradeRodBtn">Улучшить</button>
+        </div>
+        <div class="inv-section-h">САДОК</div>
+        <div class="catch-list" id="catchList"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><span class="hint" id="invMoney">0 ₽</span><button class="btn primary" data-close="inventoryModal">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- ================= ЖУРНАЛ ================= -->
+<div id="journalModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Журнал рыбака</h2>
+      <button class="iconbtn" data-close="journalModal">✕</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-jtab="fish">Рыбы</button>
+      <button class="tab" data-jtab="quests">Задания</button>
+      <button class="tab" data-jtab="notes">Записки</button>
+      <button class="tab" data-jtab="stats">Статистика</button>
+    </div>
+    <div class="tab-body" data-jbody="fish">
+      <div class="fish-grid" id="fishGrid"></div>
+    </div>
+    <div class="tab-body hidden" data-jbody="quests">
+      <div class="quest-cards" id="questCards"></div>
+    </div>
+    <div class="tab-body hidden" data-jbody="notes">
+      <div class="notes" id="notesList"></div>
+    </div>
+    <div class="tab-body hidden" data-jbody="stats">
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+    <div class="modal-foot"><button class="btn primary" data-close="journalModal">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- ================= ДОСТИЖЕНИЯ ================= -->
+<div id="achievementsModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>Достижения</h2>
+      <button class="iconbtn" data-close="achievementsModal">✕</button>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+    <div class="modal-foot"><span class="hint" id="achProgress">0 / 12</span><button class="btn primary" data-close="achievementsModal">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- ================= 100 ИДЕЙ ================= -->
+<div id="ideasModal" class="overlay modal-overlay hidden">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h2>100 идей 3D-игр · каталог</h2>
+      <button class="iconbtn" data-close="ideasModal">✕</button>
+    </div>
+    <p class="modal-sub">Каталог концептов из <code>100_3D_GAME_IDEAS.json</code>. Игра №1 — «Тихий Залив».</p>
+    <div class="ideas-list" id="ideasList"></div>
+    <div class="modal-foot"><button class="btn primary" data-close="ideasModal">Закрыть</button></div>
+  </div>
+</div>
+
+<!-- ================= ДИАЛОГ ================= -->
+<div id="dialog" class="dialog hidden">
+  <div class="dialog-box glass">
+    <div class="dialog-name" id="dialogName">Голос залива</div>
+    <div class="dialog-text" id="dialogText"></div>
+    <div class="dialog-more">E — далее</div>
+  </div>
+</div>
+
+<!-- ================= ТОСТЫ ================= -->
+<div id="toasts" class="toasts"></div>
+
+<script src="./game.js"></script>
+</body>
+</html>
