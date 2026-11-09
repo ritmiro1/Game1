@@ -1,0 +1,7 @@
+node_modules/
+.build/
+dist/
+release/
+*.pdb
+*.res
+electron/app.html
