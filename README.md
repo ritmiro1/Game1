@@ -89,6 +89,7 @@ node build.mjs         # dist/game.js + автономный dist/index.html
 node serve.mjs         # локальный сервер на :8080
 node tools/headless_test.mjs    # 61 проверка без браузера
 node tools/smoke_browser.mjs    # интеграционный прогон в jsdom + заглушка WebGL2
+node tools/test_httpd.mjs       # нативный тест HTTP-сервера, встроенного в .exe
 node tools/release.mjs          # релиз: .exe и .zip → release/
 ```
 

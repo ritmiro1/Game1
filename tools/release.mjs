@@ -101,6 +101,7 @@ function buildExe(zig) {
         '-Wl,--entry,WinMainCRTStartup',
         '-o', exeOut,
         path.join(electronDir, 'main.c'),
+        path.join(electronDir, 'httpd.c'),
         resFile,
         '-lole32', '-loleaut32', '-luuid', '-lshell32', '-luser32', '-lgdi32', '-lws2_32',
       ],
@@ -191,6 +192,11 @@ step(`кросс-компилятор: zig ${zig.version}`);
 fs.mkdirSync(releaseDir, { recursive: true });
 for (const f of fs.readdirSync(releaseDir)) fs.rmSync(path.join(releaseDir, f), { recursive: true, force: true });
 
+// HTTP-часть .exe проверяем нативным тестом: тот же httpd.c, реальные запросы
+step('нативный тест HTTP-сервера (.exe отдаёт игру локально)…');
+execFileSync(process.execPath, [path.join(root, 'tools', 'test_httpd.mjs')], { stdio: 'inherit' });
+step('HTTP-сервер проверен: 200/404, размер, байт-в-байт');
+
 const exePath = buildExe(zig.zig);
 verifyExe(exePath);
 // отладочные файлы компилятора в релиз не идут
@@ -223,7 +229,7 @@ for (const f of expect) {
 const zipList = execFileSync('unzip', ['-Z1', path.join(releaseDir, zipName)], { encoding: 'utf8' })
   .split('\n')
   .filter(Boolean);
-for (const need of ['100_3D_GAME_IDEAS.json', '100_3D_GAME_IDEAS.md', 'docs/GDD.md', 'docs/TECHNICAL.md', 'src/main.js', 'electron/main.c', 'README.md']) {
+for (const need of ['100_3D_GAME_IDEAS.json', '100_3D_GAME_IDEAS.md', 'docs/GDD.md', 'docs/TECHNICAL.md', 'src/main.js', 'electron/main.c', 'electron/httpd.c', 'tools/test_httpd.c', 'README.md']) {
   const ok = zipList.includes(need);
   console.log(`  ${ok ? '✓' : '✗'} в архиве: ${need}`);
   if (!ok) fail(`в ZIP нет ${need}`);

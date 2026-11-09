@@ -16,8 +16,6 @@
 #define _UNICODE
 #define WIN32_LEAN_AND_MEAN
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
 #include <windows.h>
 #include <shlobj.h>
 #include <stdio.h>
@@ -25,6 +23,7 @@
 #include <wchar.h>
 
 #include "resource.h"
+#include "httpd.h"
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -69,10 +68,9 @@ static HWND g_hwnd;
 static void *g_controller;
 static void *g_webview;
 static wchar_t g_appHtmlPath[MAX_PATH];
-static SOCKET g_server = INVALID_SOCKET;
 static int g_serverPort = 0;
 static const char *g_htmlData = NULL;
-static DWORD g_htmlSize = 0;
+static unsigned int g_htmlSize = 0;
 
 // ---------------------------------------------------------------- утилиты
 static void JoinPath(wchar_t *out, size_t cap, const wchar_t *a, const wchar_t *b) {
@@ -98,7 +96,7 @@ static int PrepareDataDir(void) {
 static int LoadGameData(void) {
   HRSRC res = FindResourceW(NULL, MAKEINTRESOURCEW(IDR_APP_HTML), RT_HTML);
   if (!res) return 0;
-  g_htmlSize = SizeofResource(NULL, res);
+  g_htmlSize = (unsigned int)SizeofResource(NULL, res);
   HGLOBAL data = LoadResource(NULL, res);
   if (!data || !g_htmlSize) return 0;
   g_htmlData = (const char *)LockResource(data);
@@ -213,110 +211,6 @@ static HRESULT STDMETHODCALLTYPE EnvironmentReady(Handler *self, HRESULT result,
   return S_OK;
 }
 
-
-// ---------------------------------------------------------------- локальный сервер
-// Игра отдаётся по http://127.0.0.1:<порт>/, чтобы у страницы был настоящий
-// origin: работает localStorage (сейвы), pointer lock и WebGL без file://.
-
-static int SendAll(SOCKET s, const char *buf, int len) {
-  while (len > 0) {
-    int n = send(s, buf, len, 0);
-    if (n <= 0) return 0;
-    buf += n;
-    len -= n;
-  }
-  return 1;
-}
-
-static DWORD WINAPI ClientThread(LPVOID param) {
-  SOCKET c = (SOCKET)(intptr_t)param;
-  char req[2048];
-  int got = 0;
-  // читаем заголовки запроса (до пустой строки)
-  while (got < (int)sizeof(req) - 1) {
-    int n = recv(c, req + got, (int)sizeof(req) - 1 - got, 0);
-    if (n <= 0) break;
-    got += n;
-    req[got] = 0;
-    if (strstr(req, "\r\n\r\n")) break;
-  }
-  if (got <= 0) {
-    closesocket(c);
-    return 0;
-  }
-
-  int isHtml = (strncmp(req, "GET / ", 6) == 0) || (strncmp(req, "GET /index.html", 15) == 0);
-  char header[512];
-  if (isHtml) {
-    _snprintf(header, sizeof(header) - 1,
-              "HTTP/1.1 200 OK\r\n"
-              "Content-Type: text/html; charset=utf-8\r\n"
-              "Content-Length: %lu\r\n"
-              "Cache-Control: no-store\r\n"
-              "Connection: close\r\n\r\n",
-              (unsigned long)g_htmlSize);
-    SendAll(c, header, (int)strlen(header));
-    SendAll(c, g_htmlData, (int)g_htmlSize);
-  } else {
-    const char *body = "\xD0\xA2\xD0\xB8\xD1\x85\xD0\xB8\xD0\xB9 \xD0\x97\xD0\xB0\xD0\xBB\xD0\xB8\xD0\xB2";
-    _snprintf(header, sizeof(header) - 1,
-              "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain; charset=utf-8\r\n"
-              "Content-Length: %d\r\nConnection: close\r\n\r\n",
-              (int)strlen(body));
-    SendAll(c, header, (int)strlen(header));
-    SendAll(c, body, (int)strlen(body));
-  }
-  shutdown(c, SD_SEND);
-  closesocket(c);
-  return 0;
-}
-
-/** Поднимает сервер на свободном порту 8765..8865. */
-static int StartLocalServer(void) {
-  WSADATA wsa;
-  if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) return 0;
-
-  g_server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (g_server == INVALID_SOCKET) return 0;
-
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  for (int port = 8765; port <= 8865; port++) {
-    addr.sin_port = htons((u_short)port);
-    if (bind(g_server, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
-      g_serverPort = port;
-      break;
-    }
-  }
-  if (!g_serverPort) {
-    closesocket(g_server);
-    g_server = INVALID_SOCKET;
-    return 0;
-  }
-  if (listen(g_server, 16) != 0) {
-    closesocket(g_server);
-    g_server = INVALID_SOCKET;
-    return 0;
-  }
-  return 1;
-}
-
-/** Фоновый поток: принимает соединения, пока приложение живо. */
-static DWORD WINAPI ServerLoop(LPVOID param) {
-  (void)param;
-  for (;;) {
-    SOCKET c = accept(g_server, NULL, NULL);
-    if (c == INVALID_SOCKET) break;
-    HANDLE th = CreateThread(NULL, 0, ClientThread, (LPVOID)(intptr_t)c, 0, NULL);
-    if (th)
-      CloseHandle(th);
-    else
-      closesocket(c);
-  }
-  return 0;
-}
 
 // ---------------------------------------------------------------- окно
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -461,10 +355,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int show) {
   }
   // Резервная копия на диск — если локальный сервер поднять не удалось.
   ExtractGame(g_appHtmlPath);
-  if (StartLocalServer()) {
-    HANDLE th = CreateThread(NULL, 0, ServerLoop, NULL, 0, NULL);
-    if (th) CloseHandle(th);
-  }
+  g_serverPort = httpd_start(g_htmlData, g_htmlSize, 8765, 8865);
   if (!CreateMainWindow()) {
     ShowError(L"Не удалось создать окно игры.");
     return 1;

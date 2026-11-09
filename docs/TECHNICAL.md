@@ -40,6 +40,11 @@
 3. **`tools/verify_pe.mjs` — проверка `.exe`.** Разбирает PE-заголовки, дерево ресурсов
    и подтверждает: x86-64, подсистема Windows GUI, ресурс `RT_HTML/101` с игрой,
    байт-в-байт совпадение с `dist/index.html`, иконку и версию.
+4. **`tools/test_httpd.mjs` — нативный тест мини-сервера.** Тот же `electron/httpd.c`,
+   что внутри `.exe`, компилируется системным GCC под Linux и проверяется реальными
+   HTTP-запросами: код 200/404, `Content-Length` в байтах, отдача настоящего файла игры
+   (1 035 720 байт байт-в-байт), кириллица в UTF-8, автоперебор занятых портов,
+   5 последовательных запросов. 23 проверки, прогоняется и внутри `tools/release.mjs`.
 
 ## 4. Что именно делает `.exe`
 
@@ -84,6 +89,7 @@ node build.mjs                  # сборка dist/game.js + автономны
 node serve.mjs                  # http://localhost:8080
 node tools/headless_test.mjs    # 61 проверка без браузера
 node tools/smoke_browser.mjs    # 47 проверок в jsdom + заглушка WebGL2
+node tools/test_httpd.mjs       # 23 проверки HTTP-сервера, который работает в .exe
 node tools/release.mjs          # .exe + ZIP в release/
 ```
 
