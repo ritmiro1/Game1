@@ -1,0 +1,8 @@
+# Large media artifacts
+uploads/
+edits/*.mp4
+web/edits/*.mp4
+*.zip
+web/*.zip
+__pycache__/
+*.pyc
