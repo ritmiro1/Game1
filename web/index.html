@@ -485,6 +485,45 @@
 
       <!-- Info Column -->
       <div class="info-column">
+        <!-- Direct Upload Card -->
+        <div class="card upload-card" style="border: 2px dashed rgba(139, 92, 246, 0.4); background: rgba(18, 24, 38, 0.85); margin-bottom: 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+            <div style="display:flex; align-items:center; gap: 8px;">
+              <span style="font-size: 22px;">🚀</span>
+              <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Загрузка фильма в высоком качестве</h2>
+            </div>
+            <span class="badge-gold">Без лимита (1.8 ГБ+)</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+            Так как в окне чата лимит 25 МБ, просто перетащите скачанный файл фильма сюда. Загрузка идёт кусочками по 10 МБ напрямую на наш монтажный сервер.
+          </p>
+
+          <div id="dropzone" class="dropzone" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 26px 16px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: rgba(255,255,255,0.02);">
+            <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+            <div style="font-weight: 600; font-size: 15px; color: var(--text); margin-bottom: 4px;">Нажмите для выбора файла или перетащите фильм сюда</div>
+            <div style="font-size: 12px; color: var(--text-muted);">MKV, MP4, AVI любого размера (1.8 ГБ, 4 ГБ+)</div>
+            <input type="file" id="fileInput" style="display: none;" accept="video/*,.mkv,.mp4,.avi">
+          </div>
+
+          <!-- Progress container -->
+          <div id="uploadProgressContainer" style="display: none; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span id="uploadFileName" style="font-weight: 600; color: #fff; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Файл</span>
+              <span id="uploadPercent" style="font-weight: 700; color: #a78bfa;">0%</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+              <div id="uploadProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #ec4899); border-radius: 4px; transition: width 0.15s ease;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+              <span id="uploadStats">0 МБ / 0 МБ</span>
+              <span id="uploadSpeed">-- МБ/с</span>
+            </div>
+            <div id="uploadSuccess" style="display:none; margin-top: 12px; padding: 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 13px; font-weight: 600; text-align: center;">
+              🎉 Фильм успешно загружен на сервер! Напишите в чат, и я сразу приступаю к нарезке 15+ эдитов!
+            </div>
+          </div>
+        </div>
+
         <!-- Main Card -->
         <div class="card hero-card">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
@@ -647,6 +686,111 @@
         }, 2000);
       });
     }
+
+    // Direct chunked upload handler
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const progressContainer = document.getElementById('uploadProgressContainer');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const percentText = document.getElementById('uploadPercent');
+    const fileNameText = document.getElementById('uploadFileName');
+    const statsText = document.getElementById('uploadStats');
+    const speedText = document.getElementById('uploadSpeed');
+    const successBox = document.getElementById('uploadSuccess');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = '#8b5cf6';
+        dropzone.style.background = 'rgba(139, 92, 246, 0.08)';
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = 'rgba(255,255,255,0.15)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'rgba(255,255,255,0.15)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+        if (e.dataTransfer.files.length > 0) {
+          handleFileUpload(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFileUpload(e.target.files[0]);
+        }
+      });
+    }
+
+    async function handleFileUpload(file) {
+      progressContainer.style.display = 'block';
+      successBox.style.display = 'none';
+      fileNameText.textContent = file.name;
+      
+      const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB chunks
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      
+      try {
+        const initRes = await fetch('/api/upload/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, filesize: file.size })
+        });
+        
+        const initData = await initRes.json();
+        const uploadId = initData.upload_id;
+        
+        let uploadedBytes = 0;
+        const startTime = Date.now();
+        
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunkBlob = file.slice(start, end);
+          
+          await fetch('/api/upload/chunk', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'X-Upload-ID': uploadId,
+              'X-Chunk-Index': i.toString(),
+              'X-Offset': start.toString()
+            },
+            body: chunkBlob
+          });
+          
+          uploadedBytes += (end - start);
+          const pct = Math.round((uploadedBytes / file.size) * 100);
+          progressBar.style.width = pct + '%';
+          percentText.textContent = pct + '%';
+          
+          const elapsedSec = (Date.now() - startTime) / 1000;
+          const speedMB = elapsedSec > 0 ? ((uploadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1) : '0';
+          
+          statsText.textContent = Math.round(uploadedBytes / (1024*1024)) + ' МБ / ' + Math.round(file.size / (1024*1024)) + ' МБ';
+          speedText.textContent = speedMB + ' МБ/с';
+        }
+        
+        const compRes = await fetch('/api/upload/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ upload_id: uploadId })
+        });
+        
+        const compData = await compRes.json();
+        successBox.style.display = 'block';
+        dropzone.style.display = 'none';
+      } catch (err) {
+        alert('Ошибка при загрузке: ' + err.message);
+      }
+    }
+
   </script>
 </body>
 </html>

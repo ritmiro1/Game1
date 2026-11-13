@@ -1,10 +1,19 @@
 import os
 import re
 import sys
+import json
+import uuid
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from urllib.parse import urlparse
 
 PORT = 3000
-WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+WEB_DIR = os.path.join(ROOT_DIR, 'web')
+UPLOAD_DIR = os.path.join(ROOT_DIR, 'uploads')
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Active upload sessions
+SESSIONS = {}
 
 class RangeRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -12,13 +21,102 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Range')
+        self.send_header('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Range, Content-Type, X-Upload-ID, X-Chunk-Index, X-Offset')
         super().end_headers()
 
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        
+        if parsed.path == '/api/upload/init':
+            content_len = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_len).decode('utf-8')
+            data = json.loads(body)
+            raw_filename = data.get('filename', 'movie.mkv')
+            filename = re.sub(r'[^a-zA-Z0-9._-]', '_', os.path.basename(raw_filename))
+            total_size = int(data.get('filesize', 0))
+            
+            upload_id = str(uuid.uuid4())
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            
+            # Pre-allocate/truncate file
+            with open(filepath, 'wb') as f:
+                if total_size > 0:
+                    f.truncate(total_size)
+            
+            SESSIONS[upload_id] = {
+                'filename': filename,
+                'filepath': filepath,
+                'filesize': total_size,
+                'received_bytes': 0,
+                'chunks': set()
+            }
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            resp = {'status': 'ok', 'upload_id': upload_id, 'filename': filename, 'filesize': total_size}
+            self.wfile.write(json.dumps(resp).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/upload/chunk':
+            upload_id = self.headers.get('X-Upload-ID')
+            chunk_index = int(self.headers.get('X-Chunk-Index', 0))
+            offset = int(self.headers.get('X-Offset', 0))
+            content_len = int(self.headers.get('Content-Length', 0))
+            
+            if not upload_id or upload_id not in SESSIONS:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'{"error": "Invalid upload_id"}')
+                return
+            
+            session = SESSIONS[upload_id]
+            chunk_data = self.rfile.read(content_len)
+            
+            with open(session['filepath'], 'r+b') as f:
+                f.seek(offset)
+                f.write(chunk_data)
+                
+            session['received_bytes'] += len(chunk_data)
+            session['chunks'].add(chunk_index)
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            resp = {'status': 'ok', 'chunk': chunk_index, 'received': session['received_bytes']}
+            self.wfile.write(json.dumps(resp).encode('utf-8'))
+            return
+
+        elif parsed.path == '/api/upload/complete':
+            content_len = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_len).decode('utf-8')
+            data = json.loads(body)
+            upload_id = data.get('upload_id')
+            
+            if not upload_id or upload_id not in SESSIONS:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'{"error": "Invalid upload_id"}')
+                return
+            
+            session = SESSIONS[upload_id]
+            real_size = os.path.getsize(session['filepath'])
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            resp = {'status': 'complete', 'filename': session['filename'], 'path': session['filepath'], 'size': real_size}
+            self.wfile.write(json.dumps(resp).encode('utf-8'))
+            return
+
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def send_head(self):
         path = self.translate_path(self.path)
