@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Идеальный Эдит • 1+1 (Неприкасаемые) — Space Song</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(18, 24, 38, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #8b5cf6;
+      --accent-glow: rgba(139, 92, 246, 0.35);
+      --accent-pink: #ec4899;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --gold: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.12), transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(236, 72, 153, 0.1), transparent 45%);
+    }
+
+    /* Ambient background glows */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 450px; height: 450px; background: rgba(139, 92, 246, 0.15); top: -100px; left: -100px; }
+    .orb-2 { width: 500px; height: 500px; background: rgba(245, 158, 11, 0.08); bottom: -150px; right: -150px; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c4b5fd;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(360px, 440px) 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Video Mockup Column */
+    .phone-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .phone-case {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 9 / 16;
+      border-radius: 36px;
+      background: #000;
+      padding: 10px;
+      box-shadow: 
+        0 25px 60px -15px rgba(0, 0, 0, 0.8),
+        0 0 50px -10px var(--accent-glow);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phone-screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .play-overlay-btn {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .phone-screen:hover .play-overlay-btn,
+    .phone-screen.paused .play-overlay-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .play-overlay-btn:hover {
+      transform: scale(1.1);
+      background: rgba(139, 92, 246, 0.8);
+      border-color: #fff;
+    }
+
+    /* Video info pill on top of phone */
+    .video-status {
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* Info Column */
+    .info-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(28, 32, 54, 0.85), rgba(18, 24, 38, 0.7));
+      border: 1px solid rgba(139, 92, 246, 0.25);
+    }
+
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: #c4b5fd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .badge-gold {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--gold);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .spec-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .spec-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .spec-val {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Dramaturgy Timeline */
+    .timeline-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .timeline-list::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 17px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .timeline-step {
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+
+    .step-marker {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1f293d;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      z-index: 2;
+    }
+
+    .step-marker.active {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      border-color: #fff;
+      box-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
+    }
+
+    .step-content {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .step-time {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(139, 92, 246, 0.12);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .step-time.drop {
+      color: #ec4899;
+      background: rgba(236, 72, 153, 0.15);
+      border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+
+    .step-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Publishing box */
+    .publish-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 14px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #e5e7eb;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <div class="container">
+    <header>
+      <div class="brand">
+        <span class="brand-badge">⚡ TikTok & YouTube Shorts Master</span>
+        <span class="brand-title">1+1 (Неприкасаемые) • Эдит</span>
+      </div>
+      <div class="quick-actions">
+        <a href="edit.mp4" download="1_plus_1_space_song_edit.mp4" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Скачать MP4 (1080×1920)
+        </a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Phone Column -->
+      <div class="phone-column">
+        <div class="phone-case">
+          <div class="phone-screen" id="screen">
+            <video id="player" poster="poster.jpg" playsinline controls loop>
+              <source src="edit.mp4" type="video/mp4">
+              Ваш браузер не поддерживает видео.
+            </video>
+            <button class="play-overlay-btn" id="playBtn" onclick="togglePlay()">▶</button>
+          </div>
+        </div>
+        <div class="video-status">
+          <span class="status-dot"></span>
+          <span>Готово к загрузке • 1080×1920 • 38.5 сек</span>
+        </div>
+      </div>
+
+      <!-- Info Column -->
+      <div class="info-column">
+        <!-- Main Card -->
+        <div class="card hero-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
+            <h1 class="hero-title">СЛЕД НА ЗЕМЛЕ</h1>
+            <span class="badge-gold">★ Cinematic Master</span>
+          </div>
+          <div class="hero-subtitle">
+            <span>Фильм: <strong>1+1 (Неприкасаемые, 2011)</strong></span>
+            <span>•</span>
+            <span>Трек: <strong>Beach House — Space Song</strong></span>
+          </div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">
+            Идеальный вертикальный эдит (9:16) для TikTok, YouTube Shorts, VK Клипов и Instagram Reels. 
+            Построен на контрасте скепсиса и зарождения дружбы, раскрывающий искусство как единственную нить, способную оставить след человеческой души на Земле. С точным бит-дропом под легендарную гитарную партию Space Song на 26-й секунде.
+          </p>
+
+          <div class="specs-grid">
+            <div class="spec-item">
+              <div class="spec-label">Разрешение</div>
+              <div class="spec-val">1080 × 1920</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Соотношение</div>
+              <div class="spec-val">9:16 Вертикал</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Хронометраж</div>
+              <div class="spec-val">38.5 сек</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Аудио</div>
+              <div class="spec-val">320k Стерео</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dramaturgy Timeline -->
+        <div class="card">
+          <h2 class="timeline-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Драматургия и Бит-Синхронизация
+          </h2>
+          <div class="timeline-list">
+            <div class="timeline-step">
+              <div class="step-marker">01</div>
+              <div class="step-content">
+                <div class="step-header">
+                  <div class="step-name">Философский хук</div>
+                  <div class="step-time">00:00 — 00:09.7</div>
+                </div>
+                <div class="step-desc">
+                  Величественный план галереи с видом на Эйфелеву башню. Эфирный орган Space Song тихо на заднем плане. Вопрос Филиппа: «Скажи мне, Дрисс, почему людей тянет к искусству? ... Это единственный след нашего пребывания на земле».
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="step-marker">02</div>
+              <div class="step-content">
+                <div class="step-header">
+                  <div class="step-name">Искренность и смех в Опере</div>
+                  <div class="step-time">00:09.7 — 00:17.0</div>
+                </div>
+                <div class="step-desc">
+                  Поющее дерево на сцене. Неудержимый смех Дрисса («Он поёт на немецком?!»), пробивающий холодный чопорный панцирь и вызывающий искренний до слёз смех у Филиппа.
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="step-marker">03</div>
+              <div class="step-content">
+                <div class="step-header">
+                  <div class="step-name">Рождение искусства и сделка</div>
+                  <div class="step-time">00:17.0 — 00:26.1</div>
+                </div>
+                <div class="step-desc">
+                  Дрисс пишет картину. Капли красной краски на холсте. Коллекционер Антуан оценивает шедевр Дрисса: «11 000 евро». Спокойная, уверенная гордость Филиппа в смокинге.
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="step-marker active">04</div>
+              <div class="step-content" style="border-color: rgba(236,72,153,0.3); background: rgba(236,72,153,0.04);">
+                <div class="step-header">
+                  <div class="step-name" style="color: #f472b6;">⚡ ДРОП SPACE SONG & КАТАРСИС</div>
+                  <div class="step-time drop">00:26.16 — 00:38.5</div>
+                </div>
+                <div class="step-desc">
+                  <strong>Точный бит-дроп!</strong> Световой флеш, удар баса. Дрисс в самолёте с пачкой купюр смеётся в шоке и радости («Одиннадцать тысяч за мою картину?!»). Дрисс начинает по-настоящему чувствовать музыку. Финальная теплая, пронзительная улыбка Филиппа.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Publishing & SEO Card -->
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="timeline-title" style="margin-bottom:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Текст и Хэштеги для Публикации
+            </h2>
+          </div>
+          <div class="publish-box" id="captionText">
+— Зачем люди занимаются искусством?
+— Это единственный след нашего пребывания на земле...
+
+Иногда один случайный человек меняет всю твою жизнь ❤️
+
+🎬 Фильм: 1+1 / Неприкасаемые (Intouchables, 2011)
+🎵 Трек: Beach House — Space Song
+
+#1плюс1 #неприкасаемые #intouchables #spacesong #эдит #фильмы #кино #лучшиефильмы #мотивация #тикток #shorts #рекомендации
+            <button class="copy-btn" onclick="copyCaption()">Скопировать</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const player = document.getElementById('player');
+    const screen = document.getElementById('screen');
+    const playBtn = document.getElementById('playBtn');
+
+    function togglePlay() {
+      if (player.paused) {
+        player.play();
+        screen.classList.remove('paused');
+        playBtn.textContent = '❚❚';
+      } else {
+        player.pause();
+        screen.classList.add('paused');
+        playBtn.textContent = '▶';
+      }
+    }
+
+    player.addEventListener('play', () => {
+      screen.classList.remove('paused');
+      playBtn.textContent = '❚❚';
+    });
+
+    player.addEventListener('pause', () => {
+      screen.classList.add('paused');
+      playBtn.textContent = '▶';
+    });
+
+    function copyCaption() {
+      const text = document.getElementById('captionText').innerText.replace('Скопировать', '').trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'Скопировано!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+          btn.textContent = 'Скопировать';
+          btn.style.background = '';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
