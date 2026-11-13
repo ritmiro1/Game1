@@ -3,7 +3,8 @@ import re
 import sys
 import json
 import uuid
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+import threading
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse
 
 PORT = 3000
@@ -14,6 +15,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Active upload sessions
 SESSIONS = {}
+SESSIONS_LOCK = threading.Lock()
 
 class RangeRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -36,7 +38,7 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
             content_len = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_len).decode('utf-8')
             data = json.loads(body)
-            raw_filename = data.get('filename', 'movie.mkv')
+            raw_filename = data.get('filename', 'movie.mp4')
             filename = re.sub(r'[^a-zA-Z0-9._-]', '_', os.path.basename(raw_filename))
             total_size = int(data.get('filesize', 0))
             
@@ -48,13 +50,15 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
                 if total_size > 0:
                     f.truncate(total_size)
             
-            SESSIONS[upload_id] = {
-                'filename': filename,
-                'filepath': filepath,
-                'filesize': total_size,
-                'received_bytes': 0,
-                'chunks': set()
-            }
+            with SESSIONS_LOCK:
+                SESSIONS[upload_id] = {
+                    'filename': filename,
+                    'filepath': filepath,
+                    'filesize': total_size,
+                    'received_bytes': 0,
+                    'lock': threading.Lock(),
+                    'chunks': set()
+                }
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -69,26 +73,30 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
             offset = int(self.headers.get('X-Offset', 0))
             content_len = int(self.headers.get('Content-Length', 0))
             
-            if not upload_id or upload_id not in SESSIONS:
+            session = None
+            with SESSIONS_LOCK:
+                session = SESSIONS.get(upload_id)
+            
+            if not session:
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(b'{"error": "Invalid upload_id"}')
                 return
             
-            session = SESSIONS[upload_id]
             chunk_data = self.rfile.read(content_len)
             
-            with open(session['filepath'], 'r+b') as f:
-                f.seek(offset)
-                f.write(chunk_data)
-                
-            session['received_bytes'] += len(chunk_data)
-            session['chunks'].add(chunk_index)
+            with session['lock']:
+                with open(session['filepath'], 'r+b') as f:
+                    f.seek(offset)
+                    f.write(chunk_data)
+                session['received_bytes'] += len(chunk_data)
+                session['chunks'].add(chunk_index)
+                received_now = session['received_bytes']
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            resp = {'status': 'ok', 'chunk': chunk_index, 'received': session['received_bytes']}
+            resp = {'status': 'ok', 'chunk': chunk_index, 'received': received_now}
             self.wfile.write(json.dumps(resp).encode('utf-8'))
             return
 
@@ -98,13 +106,16 @@ class RangeRequestHandler(SimpleHTTPRequestHandler):
             data = json.loads(body)
             upload_id = data.get('upload_id')
             
-            if not upload_id or upload_id not in SESSIONS:
+            session = None
+            with SESSIONS_LOCK:
+                session = SESSIONS.get(upload_id)
+            
+            if not session:
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(b'{"error": "Invalid upload_id"}')
                 return
             
-            session = SESSIONS[upload_id]
             real_size = os.path.getsize(session['filepath'])
             
             self.send_response(200)
@@ -172,6 +183,6 @@ class RangeFileWrapper:
         self.f.close()
 
 if __name__ == '__main__':
-    server = HTTPServer(('0.0.0.0', PORT), RangeRequestHandler)
-    print(f"Server listening on http://0.0.0.0:{PORT} (serving {WEB_DIR})", flush=True)
+    server = ThreadingHTTPServer(('0.0.0.0', PORT), RangeRequestHandler)
+    print(f"High-Speed Threaded Server listening on http://0.0.0.0:{PORT} (serving {WEB_DIR})", flush=True)
     server.serve_forever()

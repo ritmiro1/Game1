@@ -1146,8 +1146,9 @@
       successBox.style.display = 'none';
       fileNameText.textContent = file.name;
       
-      const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB chunks
+      const CHUNK_SIZE = 25 * 1024 * 1024; // 25 MB chunks for max speed
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const CONCURRENCY = 3; // 3 parallel upload streams
       
       try {
         const initRes = await fetch('/api/upload/init', {
@@ -1161,34 +1162,62 @@
         
         let uploadedBytes = 0;
         const startTime = Date.now();
-        
+        let chunkQueue = [];
         for (let i = 0; i < totalChunks; i++) {
-          const start = i * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, file.size);
-          const chunkBlob = file.slice(start, end);
-          
-          await fetch('/api/upload/chunk', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/octet-stream',
-              'X-Upload-ID': uploadId,
-              'X-Chunk-Index': i.toString(),
-              'X-Offset': start.toString()
-            },
-            body: chunkBlob
-          });
-          
-          uploadedBytes += (end - start);
-          const pct = Math.round((uploadedBytes / file.size) * 100);
-          progressBar.style.width = pct + '%';
-          percentText.textContent = pct + '%';
-          
-          const elapsedSec = (Date.now() - startTime) / 1000;
-          const speedMB = elapsedSec > 0 ? ((uploadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1) : '0';
-          
-          statsText.textContent = Math.round(uploadedBytes / (1024*1024)) + ' МБ / ' + Math.round(file.size / (1024*1024)) + ' МБ';
-          speedText.textContent = speedMB + ' МБ/с';
+          chunkQueue.push(i);
         }
+        
+        async function uploadWorker() {
+          while (chunkQueue.length > 0) {
+            const i = chunkQueue.shift();
+            const start = i * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunkBlob = file.slice(start, end);
+            
+            let retries = 3;
+            while (retries > 0) {
+              try {
+                const res = await fetch('/api/upload/chunk', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'X-Upload-ID': uploadId,
+                    'X-Chunk-Index': i.toString(),
+                    'X-Offset': start.toString()
+                  },
+                  body: chunkBlob
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                break;
+              } catch (e) {
+                retries--;
+                if (retries === 0) throw e;
+                await new Promise(r => setTimeout(r, 400));
+              }
+            }
+            
+            uploadedBytes += (end - start);
+            const pct = Math.min(100, Math.round((uploadedBytes / file.size) * 100));
+            progressBar.style.width = pct + '%';
+            percentText.textContent = pct + '%';
+            
+            const elapsedSec = (Date.now() - startTime) / 1000;
+            const speedMB = elapsedSec > 0 ? ((uploadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1) : '0';
+            const remainingBytes = file.size - uploadedBytes;
+            const etaSec = (parseFloat(speedMB) > 0) ? Math.round(remainingBytes / (parseFloat(speedMB) * 1024 * 1024)) : 0;
+            const etaText = etaSec > 60 ? Math.round(etaSec / 60) + ' мин' : etaSec + ' сек';
+            
+            statsText.textContent = Math.round(uploadedBytes / (1024*1024)) + ' МБ / ' + Math.round(file.size / (1024*1024)) + ' МБ • ' + speedMB + ' МБ/с';
+            speedText.textContent = 'Осталось: ~' + etaText;
+          }
+        }
+        
+        // Run workers in parallel
+        const workers = [];
+        for (let w = 0; w < Math.min(CONCURRENCY, totalChunks); w++) {
+          workers.push(uploadWorker());
+        }
+        await Promise.all(workers);
         
         const compRes = await fetch('/api/upload/complete', {
           method: 'POST',
@@ -1199,11 +1228,12 @@
         const compData = await compRes.json();
         successBox.style.display = 'block';
         dropzone.style.display = 'none';
+        statsText.textContent = Math.round(file.size / (1024*1024)) + ' МБ / ' + Math.round(file.size / (1024*1024)) + ' МБ • Готово!';
+        speedText.textContent = '100% Загружено';
       } catch (err) {
         alert('Ошибка при загрузке: ' + err.message);
       }
     }
-
 
     function selectVideo(url, title, style) {
       player.src = url;
